@@ -7,7 +7,9 @@ The dice roller can perform several different types of rolls based on the roll t
 
 Lets use this as the base of our examples
 
-```10d6```
+```
+10d6
+```
 
 We will be running the following and pasting the result with the example.
 
@@ -24,12 +26,16 @@ Breaking the roll up into it's components it works like this
 
 ##### The first integer is the number of dice to roll (required)
 
-```10```
+```
+10
+```
 
 ##### Sides, or FATE dN (required)
 The second segment is the number of sides, with the token of dN
 
-```d6```
+```
+d6
+```
 
 This would constitute a 6 sided dice. You can also replace the number with a **CAPITAL** F for FATE 
 dice. Note any additional modifiers are ignored.
@@ -134,8 +140,15 @@ Can't believe a 2 made it there...
 ```
 
 ---
+
 ### Conclusion
-Once you get the main dice roll down ```2d5``` you can add on the tokens above for some very
+Once you get the main dice roll down, such as
+
+```
+2d5
+``` 
+
+you can add on the tokens above for some very
 expressive dice rolls.
 
 ```
