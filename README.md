@@ -37,7 +37,9 @@ dice.get_result()
 ### I need examples and more explanation please.
 This is a base example roll
 
-```10d6```
+```
+10d6
+```
 
 This is how it would be executed.
 
@@ -54,21 +56,27 @@ Breaking the roll up into it's components it works like this
 
 ##### The first integer is the number of dice to roll (required)
 
-```10```
+```
+10
+```
 
 ##### Sides, or FATE dN (required)
 The second segment is the number of sides, with the token of dN
 
-```d6```
+```
+d6
+```
 
 This would constitute a 6 sided dice. You can also replace the number with a **CAPITAL** F for FATE 
 dice. Note any additional modifiers are ignored.
 
 ```
-10dF [0, 0, 0, 0, -1, 1, -1, -1, -1, 0] t:-3 
+10dF
 ```
 
-##### BOOST
+---
+
+### BOOST
 Sometimes you may want to modify the DICE value. You can do this by adding a modifier and value
 after the sides.
 
