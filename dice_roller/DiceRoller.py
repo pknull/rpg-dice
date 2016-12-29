@@ -5,9 +5,6 @@ import sympy
 from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore
 
 
-
-
-
 class DiceRoller(object):
     # the dice expression
     dexp = ''
@@ -21,6 +18,7 @@ class DiceRoller(object):
     counter_methods = ["s", "f"]
     roll_modifier_methods = ["x", "xx", "xp", "xxp", "r", "ro"]
     pool_modifier_methods = ["k", "kh", "kl", "d", "dh", "dl"]
+    hidden_modifier_methods = ["b", "l"]
 
     high_methods = ["x", "xx", "xp", "xxp", "k", "kh", "dh"]
     low_methods = ["f", "kl", "d", "dl", "r", "ro"]
@@ -54,18 +52,24 @@ class DiceRoller(object):
         dice = Literal("d")
 
         methods = self.all_methods
-        operators = '< <= > >= = !='
+        operators = '+ -'
+        comparators = '< <= > >= = !='
         digits = Word(numbers)
         dice_digits = Word(dice_numbers)
 
         dice_expr = digits.setResultsName("number_of_dice") \
                     + dice \
                     + dice_digits.setResultsName("sides") \
-                    + Optional(oneOf(operators).setResultsName("success_evaluator")) \
+                    + Optional(oneOf(operators).setResultsName("dice_modifier")) \
+                    + Optional(digits.setResultsName("dice_boost")) \
+                    + Optional(oneOf(comparators).setResultsName("success_evaluator")) \
                     + Optional(digits.setResultsName("success_threshhold")) \
                     + ZeroOrMore(Group(oneOf(methods).setResultsName('method_name') \
-                    + Optional(oneOf(operators).setResultsName("method_operator")) \
-                    + Optional(digits.setResultsName("method_value"))).setResultsName('methods',True))
+                                       + Optional(oneOf(comparators).setResultsName("method_operator")) \
+                                       + Optional(digits.setResultsName("method_value"))).setResultsName('methods',
+                                                                                                         True)) \
+                    + Optional(oneOf(operators).setResultsName("pool_modifier")) \
+                    + Optional(digits.setResultsName("pool_boost"))
 
         try:
             parsed_string = dice_expr.parseString(expression)
@@ -75,7 +79,7 @@ class DiceRoller(object):
         if parsed_string.sides != 'F':
             self.methods = self.clean_methods(parsed_string)
         else:
-            self.methods = {}
+            self.methods = {'l': self.methods['l']}
 
         self.dice_dict = self.create_dice_dict(parsed_string.sides)
         self.parsed_string = parsed_string
@@ -99,6 +103,7 @@ class DiceRoller(object):
                 else:
                     val = '0'
 
+            # pool modifiers don't need methods (yet)
             if value.method_name not in list(self.pool_modifier_methods):
                 if value.method_operator:
                     if value.method_operator == '=':
@@ -151,12 +156,35 @@ class DiceRoller(object):
             s_thresh = parsed.success_threshhold
         else:
             s_thresh = sides
+
         if parsed.success_evaluator:
             s_eval = parsed.success_evaluator
         else:
             s_eval = '=='
 
+        if parsed.dice_modifier:
+            b_mod = parsed.dice_modifier
+        else:
+            b_mod = '+'
+
+        if parsed.dice_boost:
+            b_boost = parsed.dice_boost
+        else:
+            b_boost = '0'
+
+        if parsed.pool_modifier:
+            l_mod = parsed.pool_modifier
+        else:
+            l_mod = '+'
+
+        if parsed.pool_boost:
+            l_boost = parsed.pool_boost
+        else:
+            l_boost = '0'
+
         methods['s'] = {'operator': s_eval, 'val': s_thresh}
+        methods['b'] = {'operator': b_mod, 'val': b_boost}
+        methods['l'] = {'operator': l_mod, 'val': l_boost}
         return methods
 
     def dropper_keeper(self, roll_result):
@@ -201,12 +229,20 @@ class DiceRoller(object):
         full_roll = []
 
         for i in range(0, int(number)):
-            roll = self.diceRoller(sides)
+            if 'b' in methods:
+                roll = sympy.sympify(str(self.diceRoller(sides)) + methods['b']['operator'] + methods['b']['val'])
+            else:
+                roll = self.diceRoller(sides)
+
             # reroll
             if 'r' in methods:
                 if sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
                     while sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
-                        roll = self.diceRoller(sides)
+                        if 'b' in methods:
+                            roll = sympy.sympify(
+                                str(self.diceRoller(sides)) + methods['b']['operator'] + methods['b']['val'])
+                        else:
+                            roll = self.diceRoller(sides)
                         if methods['r']['once']:
                             break
             # explode
@@ -222,10 +258,6 @@ class DiceRoller(object):
                     else:
                         full_roll.append(roll)
                         full_roll.extend(explode)
-
-            if 's' in methods:
-                if sympy.sympify(str(roll) + methods['s']['operator'] + methods['s']['val']):
-                    self.success += 1
 
             if full_roll:
                 dice.extend(full_roll)
@@ -265,7 +297,9 @@ class DiceRoller(object):
             return False
         else:
             data = self.result
-            return sum(int(i) for i in data)
+            methods = self.methods
+            core = sum(int(i) for i in data)
+            return sympy.sympify(str(core) + methods['l']['operator'] + methods['l']['val'])
 
     def get_count(self, type):
         if not self.result:
@@ -287,7 +321,7 @@ class DiceRoller(object):
         return self.get_count('s')
 
     def get_sr5_glitch(self):
-        if(self.get_fail_count() > (len(self.result)/2)+1):
+        if (self.get_fail_count() > (len(self.result) / 2) + 1):
             return True
         else:
             return False
