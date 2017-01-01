@@ -1,1 +1,4 @@
-from dice_roller import DiceRoller
+from . import DiceRoller
+from . import DiceParser
+from . import DiceThrower
+from . import NumericStringParser

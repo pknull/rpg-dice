@@ -1,8 +1,10 @@
 # rpg-dice
 A simple RPG dice roller
 
+## More about our classes
+TBCL
 
-## How do I use it?
+## Explain the roll format
 The dice roller can perform several different types of rolls based on the roll tokens. A quick summary
 is as follows (spaces for readablity only).
 
@@ -27,8 +29,8 @@ The above order is specific, and important. Not following the above format can l
  and wham-o, you can start rolling dice!
  
  ```
-from dice_roller.DiceRoller import DiceRoller
-dice = DiceRoller()
+from dice_roller.DiceThrower import DiceThrower
+dice = DiceThrower()
 dice.throw('10d6')
 dice.get_result()
 '10d6 [6, 2, 6, 4, 6, 4, 6, 6, 5, 4] t:49 s:5 '
@@ -60,14 +62,14 @@ Breaking the roll up into it's components it works like this
 10
 ```
 
-##### Sides, or FATE dN (required)
+##### Sides, or fudge dN (required)
 The second segment is the number of sides, with the token of dN
 
 ```
 d6
 ```
 
-This would constitute a 6 sided dice. You can also replace the number with a **CAPITAL** F for FATE 
+This would constitute a 6 sided dice. You can also replace the number with a **CAPITAL** F for fudge 
 dice. Note any additional modifiers are ignored.
 
 ```
@@ -107,6 +109,23 @@ To count failures, use the fN token with a comparator or just the side
 10d6f<2 [6, 4, 4, 4, 4, 5, 1, 5, 4, 5] t:42 f:1 s:1
 ```
 
+
+##### Naturals nsN/nsF
+If you'd like to count success and fails before modifiers, you can add ns and nf to your roll. A
+typical DnD roll might look like. Do note that successes are automatically tallied for the highest
+and lowest values for the dice.
+
+```
+1d20>15ns20nf1 ['20'] t:20 s:1 nf:0 ns:1
+```
+
+
+So technically you could do this (the f token is to count fails)
+
+```
+1d20f ['20'] t:20 f:0 s:1
+1d20f ['1'] t:1 f:1 s:0
+```
 ---
 
 ### ROLL MODIFIERS
@@ -187,7 +206,7 @@ Can't believe a 2 made it there...
 You may want to adjust the total based on bonuses. This can be achieved by using the same format 
 as the dice boost at the end (again) as a total boost. This doesn't effect the roll itself, just
 the total. Note you'll need to add a place holder for the dice modifier though as punishment for 
-your (and mine) laziness. As an apology you can also use this with fate(fudge) sides.
+your (and mine) laziness. As an apology you can also use this with fudge sides.
 
 ```
 2d6+0+2 [4, 6] t:12 s:1 
