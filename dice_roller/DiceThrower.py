@@ -55,15 +55,15 @@ class DiceThrower(object):
         rep = ''
         rep += dexp + ' '
         rep += str(result) + ' '
-        rep += 't:' + str(self.get_roll_total(result, parsed_roll)) + ' '
+        rep += 'total:' + str(self.get_roll_total(result['modified'], parsed_roll)) + ' '
         if parsed_roll['sides'] is not 'F':
             if 'f' in parsed_roll:
-                rep += 'f:' + str(self.get_count(result, 'f', parsed_roll)) + ' '
-            rep += 's:' + str(self.get_count(result, 's', parsed_roll)) + ' '
+                rep += 'fail:' + str(self.get_count(result['modified'], 'f', parsed_roll)) + ' '
+            rep += 'success:' + str(self.get_count(result['modified'], 's', parsed_roll)) + ' '
             if 'nf' in parsed_roll:
-                rep += 'nf:' + str(self.get_count(result, 'nf', parsed_roll)) + ' '
+                rep += 'nf:' + str(self.get_count(result['natural'], 'nf', parsed_roll)) + ' '
             if 'ns' in parsed_roll:
-                rep += 'ns:' + str(self.get_count(result, 'ns', parsed_roll))+ ' '
+                rep += 'ns:' + str(self.get_count(result['natural'], 'ns', parsed_roll))+ ' '
         return rep
 
 if __name__ == '__main__':

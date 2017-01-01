@@ -125,7 +125,6 @@ class NumericStringParser(object):
 
     def roll_dice(self, parsed):
         clean_parsed = self.parser.clean_methods(parsed)
-
         Roller = dice_roller.DiceRoller.DiceRoller()
         result = Roller.roll(clean_parsed)
         total = self.get_roll_total(result,parsed)
@@ -135,7 +134,7 @@ class NumericStringParser(object):
         if not result:
             return False
         else:
-            core = sum(int(i) for i in result)
+            core = sum(int(i) for i in result['modified'])
             if 'l' in parsed:
                 mod_core = self.eval(str(core) + parsed['l']['operator'] + parsed['l']['val'])
             else:

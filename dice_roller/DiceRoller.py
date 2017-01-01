@@ -20,7 +20,7 @@ class DiceRoller(object):
         return roll_mod
 
     def roll_die(self, number, sides, methods={}):
-        dice = []
+        dice = {'natural': [], 'modified': []}
         full_roll = []
 
         for i in range(0, int(number)):
@@ -56,14 +56,16 @@ class DiceRoller(object):
                         roll += explode[0]
                     else:
                         full_roll.append(roll)
-                        full_roll.extend(explode)
+                        full_roll.extend(explode['modified'])
 
             if full_roll:
-                dice.extend(full_roll)
+                dice['modified'].extend(full_roll)
                 del full_roll[:]
                 full_roll = []
             else:
-                dice.extend([roll])
+                dice['modified'].extend([roll])
+
+            dice['natural'].append(nroll)
 
         return dice
 
