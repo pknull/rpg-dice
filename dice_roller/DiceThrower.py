@@ -1,6 +1,7 @@
+from __future__ import division
+
 from dice_roller.DiceParser import DiceParser
 from dice_roller.DiceRoller import DiceRoller
-from dice_roller.NumericStringParser import NumericStringParser
 import sympy
 
 
@@ -21,9 +22,19 @@ class DiceThrower(object):
         return self.get_result(dexp, result, parsed_roll)
 
     def throw_string(self, deq):
-        mathp = NumericStringParser()
-        evaluated = mathp.eval(deq)
-        return evaluated
+        parser = DiceParser()
+        roller = DiceRoller()
+
+        parsed_equation = parser.parse_expression_from_equation(deq)
+        mod_deq = deq
+        for roll in parsed_equation:
+            result = roller.roll(parsed_equation[roll][0])
+            parsed_equation[roll].append(result)
+            total = self.get_roll_total(result['modified'], parsed_equation[roll][0])
+            mod_deq = mod_deq.replace(roll, str(total))
+
+        full_result = int(sympy.sympify(mod_deq))
+        return full_result, parsed_equation
 
     def throw_parsed(self, parsed):
         roller = DiceRoller()

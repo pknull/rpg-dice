@@ -10,7 +10,6 @@ class DiceRoller(object):
         return
 
     def roll(self, methods):
-        print(methods)
 
         sides = methods['sides']
         number_of_dice = methods['number_of_dice']

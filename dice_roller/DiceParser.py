@@ -1,6 +1,5 @@
-import re
-from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, delimitedList
-import collections
+from __future__ import division
+from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, Combine
 
 
 class DiceParser(object):
@@ -20,21 +19,32 @@ class DiceParser(object):
     def __init__(self):
         return
 
+    # this will parse one dice roll
     def parse_input(self, expression):
-
         # create the parsing expression based on our method list
         dice_expr = self.get_expression(self.all_methods)
-
         # parse the expression, using our  expression
         try:
             parsed_string = dice_expr.parseString(expression)
         except:
             return False
-
         # pull out a dictionary of the specific methods
         methods = self.clean_methods(parsed_string)
-
         return methods
+
+    # this will parse a full equation and return the dice
+    # expressions with their position in the equation
+    def parse_expression_from_equation(self, equation):
+        # create the parsing expression based on our method list
+        dice_expr = Combine(self.get_expression(self.all_methods)).setResultsName('expression')
+        parsed_equation = {}
+
+        for result, start, stop in dice_expr.scanString(equation):
+            methods = self.clean_methods(result.expression)
+            parsed_equation[str(result[0][0])] = [methods, start, stop]
+
+        return parsed_equation
+
 
     def get_expression(self, method_list):
         methods = method_list
