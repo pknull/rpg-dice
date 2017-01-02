@@ -49,10 +49,10 @@ class DiceRoller(object):
                     except RuntimeError:
                         raise Exception('The dice have exploded out of control ruining everything')
                     if methods['x']['penetrate']:
-                        explode[0] -= 1
+                        explode['modified'][0] -= 1
 
                     if methods['x']['compound']:
-                        roll += explode[0]
+                        roll += explode['modified'][0]
                     else:
                         full_roll.append(roll)
                         full_roll.extend(explode['modified'])
@@ -78,7 +78,7 @@ class DiceRoller(object):
         return roll
 
     def dropper_keeper(self, roll_result, methods):
-        rolls = roll_result
+        rolls = roll_result['modified']
         # first we keep
         if 'k' in methods:
             if methods['k']['layer'] == 'low':
@@ -93,7 +93,10 @@ class DiceRoller(object):
         if 'd' in methods:
             for i in range(0, int(methods['d']['val'])):
                 if methods['d']['layer'] == 'high':
-                    rolls.remove(min(rolls))
-                else:
                     rolls.remove(max(rolls))
-        return rolls
+                else:
+                    rolls.remove(min(rolls))
+
+        del roll_result['modified']
+        roll_result['modified'] = rolls
+        return roll_result

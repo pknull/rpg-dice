@@ -30,8 +30,10 @@ class DiceThrower(object):
         for roll in parsed_equation:
             result = roller.roll(parsed_equation[roll][0])
             parsed_equation[roll].append(result)
+
             total = self.get_roll_total(result['modified'], parsed_equation[roll][0])
             mod_deq = mod_deq.replace(roll, str(total))
+            print(mod_deq)
 
         full_result = int(sympy.sympify(mod_deq))
         return full_result, parsed_equation
@@ -41,25 +43,19 @@ class DiceThrower(object):
         return roller.roll_die(parsed)
 
     def get_roll_total(self, result, parsed_roll):
-        if not result:
-            return False
+        core = sum(int(i) for i in result)
+        if 'l' in parsed_roll:
+            mod_core = sympy.sympify(str(core) + parsed_roll['l']['operator'] + parsed_roll['l']['val'])
         else:
-            core = sum(int(i) for i in result)
-            if 'l' in parsed_roll:
-                mod_core = sympy.sympify(str(core) + parsed_roll['l']['operator'] + parsed_roll['l']['val'])
-            else:
-                mod_core = core
-            return mod_core
+            mod_core = core
+        return mod_core
 
     def get_count(self, result, type, parsed_roll):
-        if not result:
-            return False
-        else:
-            counter = 0
-            if type in parsed_roll:
-                for i in result:
-                    if sympy.sympify(str(i) + parsed_roll[type]['operator'] + parsed_roll[type]['val']):
-                        counter += 1
+        counter = 0
+        if type in parsed_roll:
+            for i in result:
+                if sympy.sympify(str(i) + parsed_roll[type]['operator'] + parsed_roll[type]['val']):
+                    counter += 1
         return counter
 
     def get_result(self, dexp, result, parsed_roll):
