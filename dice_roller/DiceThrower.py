@@ -35,7 +35,7 @@ class DiceThrower(object):
             mod_deq = mod_deq.replace(roll, str(total))
             print(mod_deq)
 
-        full_result = int(sympy.sympify(mod_deq))
+        full_result = sympy.sympify(mod_deq)
         return full_result, parsed_equation
 
     def throw_parsed(self, parsed):
@@ -72,6 +72,3 @@ class DiceThrower(object):
             if 'ns' in parsed_roll:
                 rep += 'ns:' + str(self.get_count(result['natural'], 'ns', parsed_roll))+ ' '
         return rep
-
-if __name__ == '__main__':
-    print('make this a standalone tool')
