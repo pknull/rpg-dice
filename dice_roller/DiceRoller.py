@@ -1,4 +1,5 @@
 import random
+
 import sympy
 
 
@@ -23,23 +24,20 @@ class DiceRoller(object):
         full_roll = []
 
         for i in range(0, int(number)):
-            nroll = self.core_roller(sides)
-            if 'b' in methods:
-                roll = sympy.sympify(str(nroll) + methods['b']['operator'] + methods['b']['val'])
-            else:
-                roll = nroll
+            roll = nroll = self.core_roller(sides)
 
             # reroll
             if 'r' in methods:
                 if sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
                     while sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
-                        if 'b' in methods:
-                            roll = sympy.sympify(
-                                str(self.core_roller(sides)) + methods['b']['operator'] + methods['b']['val'])
-                        else:
-                            roll = self.core_roller(sides)
+                        roll = self.core_roller(sides)
                         if methods['r']['once']:
                             break
+
+            # boost
+            if 'b' in methods:
+                roll = sympy.sympify(
+                    str(roll) + methods['b']['operator'] + methods['b']['val'])
 
             # explode
             if 'x' in methods:
@@ -62,7 +60,8 @@ class DiceRoller(object):
                 del full_roll[:]
                 full_roll = []
             else:
-                dice['modified'].extend([roll])
+                dice['modified'].append(roll)
+                roll = None
 
             dice['natural'].append(nroll)
 
