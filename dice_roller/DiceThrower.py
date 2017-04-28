@@ -6,29 +6,37 @@ import sympy
 
 
 class DiceThrower(object):
+    parser = DiceParser()
+    roller = DiceRoller()
     result = []
 
     def __init__(self):
         return
 
     def throw(self, dexp='1d1'):
-        parser = DiceParser()
-        roller = DiceRoller()
+
+        # apply template
+        if ":" in dexp:
+            template, value = dexp.split(":", 1)
+            dexp = self.apply_template(template,value)
+
         # parse
-        parsed_roll = parser.parse_input(dexp)
+        parsed_roll = self.parser.parse_input(dexp)
+
         # roll dice
-        result = roller.roll(parsed_roll)
-        self.result = result
-        return self.get_result(dexp, result, parsed_roll)
+        if parsed_roll == False:
+            return 'No result, unable to parse'
+        else :
+            result = self.roller.roll(parsed_roll)
+            self.result = result
+            return self.get_result(dexp, result, parsed_roll)
 
     def throw_string(self, deq):
-        parser = DiceParser()
-        roller = DiceRoller()
 
-        parsed_equation = parser.parse_expression_from_equation(deq)
+        parsed_equation = self.parser.parse_expression_from_equation(deq)
         mod_deq = deq
         for roll in parsed_equation:
-            result = roller.roll(parsed_equation[roll][0])
+            result = self.roller.roll(parsed_equation[roll][0])
             parsed_equation[roll].append(result)
 
             total = self.get_roll_total(result['modified'], parsed_equation[roll][0])
@@ -37,10 +45,6 @@ class DiceThrower(object):
 
         full_result = sympy.sympify(mod_deq)
         return full_result, parsed_equation
-
-    def throw_parsed(self, parsed):
-        roller = DiceRoller()
-        return roller.roll_die(parsed)
 
     def get_roll_total(self, result, parsed_roll):
         core = sum(int(i) for i in result)
@@ -72,3 +76,9 @@ class DiceThrower(object):
             if 'ns' in parsed_roll:
                 rep += 'ns:' + str(self.get_count(result['natural'], 'ns', parsed_roll))+ ' '
         return rep
+
+    def apply_template(self, template, value=''):
+        return {
+            'SR': value + 'd6>=5',
+            'F': '4d3-2'
+        }.get(template, False)

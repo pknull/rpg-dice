@@ -1,8 +1,8 @@
 from __future__ import division
 from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, Combine
 
-
 class DiceParser(object):
+
     # methods (grouped by defaults)
     counter_methods = ["s", "f", "ns", "nf"]
     roll_modifier_methods = ["x", "xx", "xp", "xxp", "r", "ro"]
@@ -23,6 +23,7 @@ class DiceParser(object):
     def parse_input(self, expression):
         # create the parsing expression based on our method list
         dice_expr = self.get_expression(self.all_methods)
+
         # parse the expression, using our  expression
         try:
             parsed_string = dice_expr.parseString(expression)
@@ -45,10 +46,11 @@ class DiceParser(object):
 
         return parsed_equation
 
-
     def get_expression(self, method_list):
         methods = method_list
+
         numbers = "0123456789"
+
         dice_numbers = numbers + 'F'
         dice = Literal("d")
 
@@ -58,18 +60,18 @@ class DiceParser(object):
         dice_digits = Word(dice_numbers)
 
         dice_expr = digits.setResultsName("number_of_dice") \
-                    + dice \
-                    + dice_digits.setResultsName("sides") \
-                    + Optional(oneOf(operators).setResultsName("dice_modifier")) \
-                    + Optional(digits.setResultsName("dice_boost")) \
-                    + Optional(oneOf(comparators).setResultsName("success_evaluator")) \
-                    + Optional(digits.setResultsName("success_threshhold")) \
-                    + ZeroOrMore(Group(oneOf(methods).setResultsName('method_name') \
-                                       + Optional(oneOf(comparators).setResultsName("method_operator")) \
-                                       + Optional(digits.setResultsName("method_value"))).setResultsName('methods',
-                                                                                                         True)) \
-                    + Optional(oneOf(operators).setResultsName("pool_modifier")) \
-                    + Optional(digits.setResultsName("pool_boost"))
+            + dice \
+            + dice_digits.setResultsName("sides") \
+            + Optional(oneOf(operators).setResultsName("dice_modifier")) \
+            + Optional(digits.setResultsName("dice_boost")) \
+            + Optional(oneOf(comparators).setResultsName("success_evaluator")) \
+            + Optional(digits.setResultsName("success_threshhold")) \
+            + ZeroOrMore(Group(oneOf(methods).setResultsName('method_name') \
+                               + Optional(oneOf(comparators).setResultsName("method_operator")) \
+                               + Optional(digits.setResultsName("method_value"))).setResultsName('methods',
+                                                                                                 True)) \
+            + Optional(oneOf(operators).setResultsName("pool_modifier")) \
+            + Optional(digits.setResultsName("pool_boost"))
 
         return dice_expr
 
@@ -138,8 +140,6 @@ class DiceParser(object):
             # default
             else:
                 methods[method_name] = {'operator': operator, 'val': val}
-
-
 
         # success
         if parsed.success_threshhold:
