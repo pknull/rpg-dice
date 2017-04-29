@@ -24,6 +24,7 @@ class DiceThrower(object):
             dexp = self.apply_template(template,value)
 
         # get output format
+        result_template = str()
         if "|" in dexp:
             dexp, result_template = dexp.split("|", 1)
 
@@ -37,8 +38,6 @@ class DiceThrower(object):
             result = self.roller.roll(parsed_roll)
 
         score = self.scorer.get_result(dexp, result, parsed_roll)
-
-        print(str(score))
 
         if(len(result_template) > 0):
             final_result = result_template.format(s=score)
