@@ -2,12 +2,15 @@ from __future__ import division
 
 from dice_roller.DiceParser import DiceParser
 from dice_roller.DiceRoller import DiceRoller
+from dice_roller.DiceScorer import DiceScorer
+
 import sympy
 
 
 class DiceThrower(object):
     parser = DiceParser()
     roller = DiceRoller()
+    scorer = DiceScorer()
     result = []
 
     def __init__(self):
@@ -20,6 +23,10 @@ class DiceThrower(object):
             template, value = dexp.split(":", 1)
             dexp = self.apply_template(template,value)
 
+        # get output format
+        if "|" in dexp:
+            dexp, result_template = dexp.split("|", 1)
+
         # parse
         parsed_roll = self.parser.parse_input(dexp)
 
@@ -28,8 +35,17 @@ class DiceThrower(object):
             return 'No result, unable to parse'
         else :
             result = self.roller.roll(parsed_roll)
-            self.result = result
-            return self.get_result(dexp, result, parsed_roll)
+
+        score = self.scorer.get_result(dexp, result, parsed_roll)
+
+        print(str(score))
+
+        if(len(result_template) > 0):
+            final_result = result_template.format(s=score)
+        else :
+            final_result = score
+
+        return final_result
 
     def throw_string(self, deq):
 
@@ -39,46 +55,18 @@ class DiceThrower(object):
             result = self.roller.roll(parsed_equation[roll][0])
             parsed_equation[roll].append(result)
 
-            total = self.get_roll_total(result['modified'], parsed_equation[roll][0])
+            total = self.scorer.get_roll_total(result['modified'], parsed_equation[roll][0])
             mod_deq = mod_deq.replace(roll, str(total))
             print(mod_deq)
 
         full_result = sympy.sympify(mod_deq)
         return full_result, parsed_equation
 
-    def get_roll_total(self, result, parsed_roll):
-        core = sum(int(i) for i in result)
-        if 'l' in parsed_roll:
-            mod_core = sympy.sympify(str(core) + parsed_roll['l']['operator'] + parsed_roll['l']['val'])
-        else:
-            mod_core = core
-        return mod_core
-
-    def get_count(self, result, type, parsed_roll):
-        counter = 0
-        if type in parsed_roll:
-            for i in result:
-                if sympy.sympify(str(i) + parsed_roll[type]['operator'] + parsed_roll[type]['val']):
-                    counter += 1
-        return counter
-
-    def get_result(self, dexp, result, parsed_roll):
-        rep = ''
-        rep += dexp + ' '
-        rep += str(result) + ' '
-        rep += 'total:' + str(self.get_roll_total(result['modified'], parsed_roll)) + ' '
-        if parsed_roll['sides'] is not 'F':
-            if 'f' in parsed_roll:
-                rep += 'fail:' + str(self.get_count(result['modified'], 'f', parsed_roll)) + ' '
-            rep += 'success:' + str(self.get_count(result['modified'], 's', parsed_roll)) + ' '
-            if 'nf' in parsed_roll:
-                rep += 'nf:' + str(self.get_count(result['natural'], 'nf', parsed_roll)) + ' '
-            if 'ns' in parsed_roll:
-                rep += 'ns:' + str(self.get_count(result['natural'], 'ns', parsed_roll))+ ' '
-        return rep
-
     def apply_template(self, template, value=''):
         return {
-            'SR': value + 'd6>=5',
-            'F': '4d3-2'
+            'SR': value + 'd6>=5f=1|{s[modified]} {s[success]} successes {s[fail]} fail',
+            'F': '4d3-2' + value + '|{s[total]}',
+            'W': '2d6+0' + value + '|{s[total]}'
         }.get(template, False)
+
+
