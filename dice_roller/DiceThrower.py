@@ -18,16 +18,6 @@ class DiceThrower(object):
 
     def throw(self, dexp='1d1'):
 
-        # apply template
-        if ":" in dexp:
-            template, value = dexp.split(":", 1)
-            dexp = self.apply_template(template,value)
-
-        # get output format
-        result_template = str()
-        if "|" in dexp:
-            dexp, result_template = dexp.split("|", 1)
-
         # parse
         parsed_roll = self.parser.parse_input(dexp)
 
@@ -39,12 +29,7 @@ class DiceThrower(object):
 
         score = self.scorer.get_result(dexp, result, parsed_roll)
 
-        if(len(result_template) > 0):
-            final_result = result_template.format(s=score)
-        else :
-            final_result = score
-
-        return final_result
+        return score
 
     def throw_string(self, deq):
 
@@ -61,11 +46,5 @@ class DiceThrower(object):
         full_result = sympy.sympify(mod_deq)
         return full_result, parsed_equation
 
-    def apply_template(self, template, value=''):
-        return {
-            'SR': value + 'd6>=5f=1|{s[modified]} {s[success]} successes {s[fail]} fail',
-            'F': '4d3-2' + value + '|{s[total]}',
-            'W': '2d6+0' + value + '|{s[total]}'
-        }.get(template, False)
 
 
