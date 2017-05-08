@@ -78,6 +78,7 @@ class DiceRoller(object):
 
     def dropper_keeper(self, roll_result, methods):
         rolls = roll_result['modified']
+
         # first we keep
         if 'k' in methods:
             if methods['k']['layer'] == 'low':
@@ -88,13 +89,18 @@ class DiceRoller(object):
             del rolls[:]
             rolls = top_rolls
 
-        # then we drop
         if 'd' in methods:
-            for i in range(0, int(methods['d']['val'])):
-                if methods['d']['layer'] == 'high':
-                    rolls.remove(max(rolls))
-                else:
-                    rolls.remove(min(rolls))
+            if methods['d']['layer'] == 'high':
+                reverse = False
+            else:
+                reverse = True
+            keep = len(rolls) - int(methods['d']['val'])
+            if keep <= 0:
+                rolls = []
+            else:
+                top_rolls = sorted(rolls, reverse=reverse)[:keep]
+                del rolls[:]
+                rolls = top_rolls
 
         del roll_result['modified']
         roll_result['modified'] = rolls
