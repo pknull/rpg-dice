@@ -32,8 +32,7 @@ The above order is specific, and important. Not following the above format can l
 from dice_roller.DiceThrower import DiceThrower
 dice = DiceThrower()
 dice.throw('10d6')
-dice.get_result()
-'10d6 [6, 2, 6, 4, 6, 4, 6, 6, 5, 4] t:49 s:5 '
+{'natural': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'roll': '10d6', 'modified': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'success': '2', 'total': '37'}
 ```
 
 ### I need examples and more explanation please.
@@ -49,8 +48,7 @@ This is how it would be executed.
 from dice_roller.DiceRoller import DiceRoller
 dice = DiceRoller()
 dice.throw('10d6')
-dice.get_result()
-'10d6 [6, 2, 6, 4, 6, 4, 6, 6, 5, 4] t:49 s:5 '
+{'natural': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'roll': '10d6', 'modified': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'success': '2', 'total': '37'}
 
 ```
 
@@ -83,7 +81,8 @@ Sometimes you may want to modify the DICE value. You can do this by adding a mod
 after the sides.
 
 ```
-2d6+4 [10, 5] t:15 s:0
+dice.throw('2d6+4')
+{'natural': [4, 2], 'roll': '2d6+4', 'modified': [8, 6], 'success': '1', 'total': '14'}
 ```
 
 ---
@@ -98,15 +97,19 @@ advanced counters.
 To count successes instead of totals, add a comparator after the sides and any boost modifiers.
 
 ```
-10d6>=5 [5, 6, 2, 1, 3, 3, 6, 2, 2, 6] t:36 s:4
-2d6+4>5 [9, 9] t:18 s:2
+dice.throw('10d6>=5')
+{'natural': [6, 1, 3, 1, 2, 4, 2, 6, 5, 2], 'roll': '10d6>=5', 'modified': [6, 1, 3, 1, 2, 4, 2, 6, 5, 2], 'success': '3', 'total': '32'}
+
+dice.throw('2d6+4>5')
+{'natural': [3, 6], 'roll': '2d6+4>5', 'modified': [7, 10], 'success': '2', 'total': '17'}
 ```
 
 ##### Failures fN
 To count failures, use the fN token with a comparator or just the side
 
 ```
-10d6f<2 [6, 4, 4, 4, 4, 5, 1, 5, 4, 5] t:42 f:1 s:1
+dice.throw('10d6f<2')
+{'natural': [5, 5, 4, 3, 2, 3, 4, 6, 6, 4], 'success': '2', 'fail': '0', 'total': '42', 'roll': '10d6f<2', 'modified': [5, 5, 4, 3, 2, 3, 4, 6, 6, 4]}
 ```
 
 
@@ -116,15 +119,19 @@ typical DnD roll might look like. Do note that successes are automatically talli
 and lowest values for the dice.
 
 ```
-1d20>15ns20nf1 ['20'] t:20 s:1 nf:0 ns:1
+dice.throw('1d20>15ns20nf1')
+{'natural': [8], 'success': '0', 'ns': '0', 'nf': '0', 'total': '8', 'roll': '1d20>15ns20nf1', 'modified': [8]}
 ```
 
 
 So technically you could do this (the f token is to count fails)
 
 ```
-1d20f ['20'] t:20 f:0 s:1
-1d20f ['1'] t:1 f:1 s:0
+ dice.throw('1d20f')
+{'natural': [20], 'success': '1', 'fail': '0', 'total': '20', 'roll': '1d20f', 'modified': [20]}
+
+dice.throw('1d20f')
+{'natural': [1], 'success': '0', 'fail': '1', 'total': '1', 'roll': '1d20f', 'modified': [1]}
 ```
 ---
 
@@ -138,7 +145,8 @@ dice boost modifiers are applied BEFORE additional modifiers.
 Exploding dice roll an additional die when the comparator, on that die, is rolled.
 
 ```
-10d6x>=5 [1, 6, 4, 5, 5, 2, 5, 5, 1, 5, 3, 3, 2, 5, 2, 5, 2, 5, 2] t:68 s:1
+ dice.throw('10d6x>=5')
+{'natural': [1, 1, 1, 2, 5, 5, 1, 6, 4, 3], 'roll': '10d6x>=5', 'modified': [1, 1, 1, 2, 5, 4, 5, 1, 1, 6, 6, 2, 4, 3], 'success': '2', 'total': '42'}
 ```
 
 This would explode any dice equal or greater than 5 in our roll.
@@ -148,14 +156,16 @@ Sometimes, you may want the exploded dice rolls to be added together under the s
 This can lead to large singular dice rolls.
 
 ```
-10d6xx>=5 [1, 1, 1, 4, 2, 26, 8, 1, 1, 4] t:49 s:0 
+dice.throw('10d6xx>=5')
+{'natural': [5, 2, 2, 4, 5, 4, 5, 2, 4, 2], 'roll': '10d6xx>=5', 'modified': [7, 2, 2, 4, 7, 4, 8, 2, 4, 2], 'success': '0', 'total': '42'}
 ```
 
 ##### Penetrating Dice xpN/xxpN
 Simply put, any exploded dice are recorded as one less (after exploding if applicable)
 
 ```
-10d6xp>=5 [1, 4, 4, 3, 6, 3, 1, 5, 0, 5, 1, 1, 5, 3] t:42 s:1
+dice.throw('10d6xp>=5')
+{'natural': [2, 5, 2, 1, 4, 4, 6, 2, 4, 6], 'roll': '10d6xp>=5', 'modified': [2, 5, 5, 1, 2, 1, 4, 4, 6, 2, 2, 4, 6, 5, 4, 5, 1], 'success': '2', 'total': '59'}
 ```
 
 Note you can occasionally get dice with a value of 0 here.
@@ -170,17 +180,19 @@ use comparators and numbers for more advanced usage.
 If the dice matches, reroll. Defaults to lowest. Rerolls until it no longer matches.
 
 ```
-10d6r<3 [4, 5, 3, 5, 3, 6, 4, 4, 3, 5] t:42 s:1 
+dice.throw('10d6r<3')
+{'natural': [1, 1, 4, 2, 4, 5, 2, 1, 5, 2], 'roll': '10d6r<3', 'modified': [3, 5, 4, 5, 4, 5, 6, 3, 5, 6], 'success': '2', 'total': '46'}
 ```
 
 ##### Reroll Once roN
 If the dice matches, reroll. Defaults to lowest. Reroll only once.
 
 ```
-10d6ro<3 [5, 3, 6, 4, 4, 2, 3, 4, 5, 6] t:42 s:2
+dice.throw('10d6ro<3')
+{'natural': [6, 2, 5, 1, 1, 6, 3, 1, 2, 5], 'roll': '10d6ro<3', 'modified': [6, 3, 5, 1, 3, 6, 3, 6, 6, 5], 'success': '4', 'total': '44'}
 ```
 
-Note the 2, bad luck there...
+Note the 1, bad luck there...
 
 ---
 
@@ -192,12 +204,14 @@ system will keep dice first, then drop (if you do both for some reason)
 Simple, keep high, keep low, drop high, drop low, of the specified number. Easy.
 
 ```
-10d6kh5 [5, 4, 4, 4, 2] t:19 s:0 
+dice.throw('10d6kh5')
+{'natural': [2, 5, 3, 1, 6, 3, 4, 2, 5, 3], 'roll': '10d6kh5', 'modified': [6, 5, 5, 4, 3], 'success': '1', 'total': '23'}
 ```
-Can't believe a 2 made it there...
+Can't believe a 3 made it there...
 
 ```
-10d6kl5 [1, 2, 2, 3, 3] t:11 s:0
+dice.throw('10d6kl5')
+{'natural': [5, 3, 6, 5, 1, 4, 5, 2, 6, 2], 'roll': '10d6kl5', 'modified': [1, 2, 2, 3, 4], 'success': '0', 'total': '12'}
 ```
 
 ---
@@ -209,8 +223,11 @@ the total. Note you'll need to add a place holder for the dice modifier though a
 your (and mine) laziness. As an apology you can also use this with fudge sides.
 
 ```
-2d6+0+2 [4, 6] t:12 s:1 
-2dF+0+2 [0, 1] t:3 
+ dice.throw('2d6+0+2')
+{'natural': [1, 2], 'roll': '2d6+0+2', 'modified': [1, 2], 'success': '0', 'total': '5'}
+
+dice.throw('2dF+0+2')
+{'natural': [1, 0], 'roll': '2dF+0+2', 'modified': [1, 0], 'total': '3'}
 ```
 
 ---
@@ -219,5 +236,6 @@ Once you get the main dice roll down ```2d5``` you can add on the tokens above f
 expressive (and meaningless) dice rolls.
 
 ```
-10d6+0>=5f<=2xxp>=5ro=1dl5+4 [6, 3, 4, 2, 4] t:23 f:1 s:1
+dice.throw('10d6+0>=5f<=2xxp>=5ro=1dl5+4')
+{'natural': [1, 3, 1, 2, 3, 4, 5, 5, 3, 1], 'success': '3', 'fail': '0', 'total': '51', 'roll': '10d6+0>=5f<=2xxp>=5ro=1dl5+4', 'modified': [20, 11, 8, 4, 4]}
 ```
