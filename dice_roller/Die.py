@@ -2,9 +2,11 @@ import random
 
 class Die(object):
     sides = 0
+    showing = 0
 
     def __init__(self, sides):
         self.sides = sides
+        self.roll()
 
     def roll(self):
         if self.sides == 'f':
@@ -13,4 +15,4 @@ class Die(object):
             roll = 0
         else:
             roll = int(random.randint(1, int(self.sides)))
-        return roll
+        self.showing = roll

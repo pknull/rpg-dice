@@ -24,13 +24,15 @@ class DiceRoller(object):
         die = Die(sides)
 
         for i in range(0, int(number)):
-            roll = nroll = die.roll()
+            die.roll()
+            roll = nroll = die.showing
 
             # reroll
             if 'r' in methods:
                 if sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
                     while sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
-                        roll = die.roll()
+                        die.roll()
+                        roll = die.showing
                         if methods['r']['once']:
                             break
 
