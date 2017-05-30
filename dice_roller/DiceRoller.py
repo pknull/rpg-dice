@@ -1,5 +1,4 @@
-import random
-
+from dice_roller.Die import Die
 import sympy
 
 
@@ -22,15 +21,16 @@ class DiceRoller(object):
     def roll_die(self, number, sides, methods={}):
         dice = {'natural': [], 'modified': []}
         full_roll = []
+        die = Die(sides)
 
         for i in range(0, int(number)):
-            roll = nroll = self.core_roller(sides)
+            roll = nroll = die.roll()
 
             # reroll
             if 'r' in methods:
                 if sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
                     while sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
-                        roll = self.core_roller(sides)
+                        roll = die.roll()
                         if methods['r']['once']:
                             break
 
@@ -66,15 +66,6 @@ class DiceRoller(object):
             dice['natural'].append(nroll)
 
         return dice
-
-    def core_roller(self, sides):
-        if sides == 'F':
-            roll = int(random.randint(-1, 1))
-        elif int(sides) < 1:
-            roll = 0
-        else:
-            roll = int(random.randint(1, int(sides)))
-        return roll
 
     def dropper_keeper(self, roll_result, methods):
         rolls = roll_result['modified']

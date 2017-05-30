@@ -1,10 +1,10 @@
 from __future__ import division
 
+import sympy
+
 from dice_roller.DiceParser import DiceParser
 from dice_roller.DiceRoller import DiceRoller
 from dice_roller.DiceScorer import DiceScorer
-
-import sympy
 
 
 class DiceThrower(object):
@@ -23,10 +23,11 @@ class DiceThrower(object):
 
         # roll dice
         if parsed_roll == False:
-            return 'No result, unable to parse'
-        else :
+            return 'No result, unable to parse ' + dexp
+        else:
             result = self.roller.roll(parsed_roll)
 
+        # score
         score = self.scorer.get_result(dexp, result, parsed_roll)
 
         return score
@@ -45,6 +46,3 @@ class DiceThrower(object):
 
         full_result = sympy.sympify(mod_deq)
         return full_result, parsed_equation
-
-
-
