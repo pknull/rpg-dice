@@ -51,7 +51,7 @@ class DiceParser(object):
 
         numbers = "0123456789"
 
-        dice_numbers = numbers + 'f'
+        dice_numbers = numbers + 'F'
         dice = Literal("d")
 
         operators = '+ -'
@@ -153,10 +153,11 @@ class DiceParser(object):
             else:
                 s_eval = parsed.success_evaluator
         else:
-            s_eval = '=='
+            s_eval = '>='
 
         methods['s'] = {'operator': s_eval, 'val': s_thresh}
 
+        # boost
         if parsed.dice_modifier:
             b_mod = parsed.dice_modifier
         else:
@@ -169,6 +170,7 @@ class DiceParser(object):
 
         methods['b'] = {'operator': b_mod, 'val': b_boost}
 
+        # Pool boost
         if parsed.pool_modifier:
             l_mod = parsed.pool_modifier
         else:
@@ -183,7 +185,7 @@ class DiceParser(object):
 
         # this is silly, but makes problems obvious in the parse debug.
         # NO METHODS FOR FUDGE DICE
-        if parsed.sides == 'f':
+        if parsed.sides == 'F':
             methods = {'l': methods['l']}
         # 0 or less sided dice are stupid.
         elif int(parsed.sides) <= 0:

@@ -67,11 +67,11 @@ The second segment is the number of sides, with the token of dN
 d6
 ```
 
-This would constitute a 6 sided dice. You can also replace the number with a **lowercase** f for fudge 
+This would constitute a 6 sided dice. You can also replace the number with a **UPPERCASE** F for fudge 
 dice. Note any additional modifiers are ignored.
 
 ```
-10df
+10dF
 ```
 
 ---

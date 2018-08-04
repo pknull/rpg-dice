@@ -9,8 +9,8 @@ class Die(object):
         self.roll()
 
     def roll(self):
-        if self.sides == 'f':
-            roll = int(random.randint(-1, 1))
+        if self.sides == 'F':
+            roll = random.choice([-1, -1, 0, 0, 1, 1])
         elif int(self.sides) < 1:
             roll = 0
         else:
