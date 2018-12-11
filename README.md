@@ -45,8 +45,8 @@ This is a base example roll
 This is how it would be executed.
 
 ```
-from dice_roller.DiceRoller import DiceRoller
-dice = DiceRoller()
+from dice_roller.DiceThrower import DiceThrower
+dice = DiceThrower()
 dice.throw('10d6')
 {'natural': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'roll': '10d6', 'modified': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'success': '2', 'total': '37'}
 

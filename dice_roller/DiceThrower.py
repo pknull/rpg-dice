@@ -26,6 +26,7 @@ class DiceThrower(object):
             return 'No result, unable to parse ' + dexp
         else:
             result = self.roller.roll(parsed_roll)
+            self.result = result
 
         # score
         score = self.scorer.get_result(dexp, result, parsed_roll)

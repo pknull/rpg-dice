@@ -3,14 +3,11 @@ import sympy
 
 
 class DiceRoller(object):
-    # an array of results
-    result = []
 
     def __init__(self):
         return
 
     def roll(self, methods):
-
         sides = methods['sides']
         number_of_dice = methods['number_of_dice']
 

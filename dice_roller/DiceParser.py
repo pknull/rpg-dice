@@ -51,7 +51,7 @@ class DiceParser(object):
 
         numbers = "0123456789"
 
-        dice_numbers = numbers + 'F'
+        dice_numbers = numbers + 'FP'
         dice = Literal("d")
 
         operators = '+ -'
@@ -185,7 +185,7 @@ class DiceParser(object):
 
         # this is silly, but makes problems obvious in the parse debug.
         # NO METHODS FOR FUDGE DICE
-        if parsed.sides == 'F':
+        if parsed.sides == 'F' or parsed.sides == 'P':
             methods = {'l': methods['l']}
         # 0 or less sided dice are stupid.
         elif int(parsed.sides) <= 0:
