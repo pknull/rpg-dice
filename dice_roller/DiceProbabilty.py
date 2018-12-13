@@ -4,6 +4,7 @@ from collections import Counter
 import itertools as it
 from math import factorial
 from dice_roller.DiceParser import DiceParser
+from dice_roller.DiceThrower import DiceThrower
 import sympy
 
 
@@ -32,7 +33,7 @@ class DiceProbability(object):
         print('---- Counts')
         print(total_possibilities)
 
-        print('---- Win')
+        print('---- Win ' + str(target))
         chance = self.hit_chance(numberOfDice, target, success_probability)
         print('{0:.2f}'.format(chance.numerator / Decimal(chance.denominator) * 100))
 
@@ -40,9 +41,9 @@ class DiceProbability(object):
         chance = 1 - chance
         print('{0:.2f}'.format(chance.numerator / Decimal(chance.denominator) * 100))
 
-        print('---- Die')
-        fail_target = round((numberOfDice / 2) + 1)
-        chance = self.hit_chance(numberOfDice, fail_target, die_probability)
+        crit_target = round((numberOfDice / 2) + 1)
+        print('---- Crit Fail ' + str(crit_target))
+        chance = self.hit_chance(numberOfDice, crit_target, die_probability)
         print('{0:.2f}'.format(chance.numerator / Decimal(chance.denominator) * 100))
 
     def bruteThrow(self, dexp='1d1', target=2):
@@ -61,12 +62,10 @@ class DiceProbability(object):
 
         success_set = self.calc(s_op, s_val, dice)
         fail_set = self.calc(f_op, f_val, dice)
-
-        targetAmount = target
         totalSuccess = 0
         totalFails = 0
         totalCritFails = 0
-        fail_target = round((numberOfDice / 2) + 1)
+        crit_target = round((numberOfDice / 2) + 1)
 
         for i in it.product(dice, repeat=numberOfDice):
             successes = 0
@@ -77,10 +76,10 @@ class DiceProbability(object):
             for j in fail_set:
                 fails += totals[j]
 
-            if fails >= fail_target:
+            if fails >= crit_target:
                 totalFails += 1
                 totalCritFails += 1
-            elif successes >= targetAmount:
+            elif successes >= target:
                 totalSuccess += 1
             else:
                 totalFails += 1
@@ -91,12 +90,47 @@ class DiceProbability(object):
 
         print('---- Counts')
         print(total_possibilities)
-        print('---- Win')
+        print('---- Win ' + str(target))
         print('{0:.2f}'.format(win.numerator / Decimal(win.denominator) * 100))
         print('---- Fail')
         print('{0:.2f}'.format(fail.numerator / Decimal(fail.denominator) * 100))
-        print('---- Die')
+        print('---- Crit Fail ' + str(crit_target))
         print('{0:.2f}'.format(crits.numerator / Decimal(crits.denominator) * 100))
+
+    def statThrow(self, dexp='1d1', target=2, pool=100000):
+        dice = DiceThrower()
+        parsed_roll = self.parser.parse_input(dexp)
+        numberOfDice = int(parsed_roll['number_of_dice'])
+        totalSuccess = 0
+        totalFails = 0
+        totalCritFails = 0
+        crit_target = round((numberOfDice / 2) + 1)
+
+        for i in range(pool):
+            result = dice.throw(dexp)
+
+            if int(result['fail']) >= crit_target:
+                totalFails += 1
+                totalCritFails += 1
+            elif int(result['success']) >= target:
+                totalSuccess += 1
+            else:
+                totalFails += 1
+
+        win = Fraction(totalSuccess, pool)
+        fail = Fraction(totalFails, pool)
+        crits = Fraction(totalCritFails, pool)
+
+        print('---- Counts')
+        print(pool)
+        print('---- Win ' + str(target))
+        print('{0:.2f}'.format(win.numerator / Decimal(win.denominator) * 100))
+        print('---- Fail')
+        print('{0:.2f}'.format(fail.numerator / Decimal(fail.denominator) * 100))
+        print('---- Crit Fail ' + str(crit_target))
+        print('{0:.2f}'.format(crits.numerator / Decimal(crits.denominator) * 100))
+
+
 
     def calc(self, op, val, space):
         """Subset of sample space for which a condition is true."""
