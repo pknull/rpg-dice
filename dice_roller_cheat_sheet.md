@@ -7,6 +7,7 @@ Layout of this cheat sheet:
 <example>
 n = dice count
 y = dice size
+c = Some constant value for comparisons
 ```
 
 ## Basic Roll
