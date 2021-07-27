@@ -5,6 +5,8 @@ import sympy
 from dice_roller.DiceParser import DiceParser
 from dice_roller.DiceRoller import DiceRoller
 from dice_roller.DiceScorer import DiceScorer
+from dice_roller.DiceException import DiceException
+
 
 
 class DiceThrower(object):
@@ -19,14 +21,15 @@ class DiceThrower(object):
     def throw(self, dexp='1d1'):
 
         # parse
-        parsed_roll = self.parser.parse_input(dexp)
+        try:
+            parsed_roll = self.parser.parse_input(dexp)
+        except DiceException:
+            return 'Bad roll expression - ' + dexp
 
         # roll dice
-        if parsed_roll == False:
-            return 'No result, unable to parse ' + dexp
-        else:
-            result = self.roller.roll(parsed_roll)
-            self.result = result
+        print(parsed_roll)
+        result = self.roller.roll(parsed_roll)
+        self.result = result
 
         # score
         score = self.scorer.get_result(dexp, result, parsed_roll)
