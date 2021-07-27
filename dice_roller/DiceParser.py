@@ -89,9 +89,9 @@ class DiceParser(object):
             raise DiceException('Unable to parse expression', 'Unknown dice sides')
         elif int(sides) <= 0:
             raise DiceException('Unable to parse expression', 'Impossible dice faces')
-        elif int(sides) >= 100:
+        elif int(sides) > 100:
             raise DiceException('Unable to perform roll', 'Too many dice faces')
-        elif int(parsed.number_of_dice) >= 200:
+        elif int(parsed.number_of_dice) > 200:
             raise DiceException('Unable to perform roll', 'Too many dice requested')
 
         for value in parsed_methods:
