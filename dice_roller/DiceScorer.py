@@ -7,14 +7,16 @@ class DiceScorer(object):
         return
 
     def get_roll_total(self, result, parsed_roll):
-        if(result[:0] is int):
-            core = sum(int(i) for i in result)
-        else:
+
+        if isinstance(result[0], str):
             core = 0
+        else:
+            core = sum(int(i) for i in result)
         if 'l' in parsed_roll:
             mod_core = sympy.sympify(str(core) + parsed_roll['l']['operator'] + parsed_roll['l']['val'])
         else:
             mod_core = core
+
         return mod_core
 
     def get_count(self, result, type, parsed_roll):

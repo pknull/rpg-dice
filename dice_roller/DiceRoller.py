@@ -1,4 +1,5 @@
 from dice_roller.Die import Die
+from dice_roller.DiceException import DiceException
 import sympy
 
 
@@ -44,7 +45,7 @@ class DiceRoller(object):
                     try:
                         explode = self.roll_die(1, sides, methods)
                     except RuntimeError:
-                        raise Exception('The dice have exploded out of control ruining everything')
+                        raise DiceException('The dice have exploded out of control ruining everything')
                     if methods['x']['penetrate']:
                         explode['modified'][0] -= 1
 
