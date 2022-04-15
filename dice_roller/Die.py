@@ -1,6 +1,6 @@
 import random
 
-class Die(object):
+class die(object):
     sides = 0
     showing = 0
 
