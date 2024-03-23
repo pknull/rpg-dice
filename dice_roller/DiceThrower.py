@@ -8,7 +8,6 @@ from dice_roller.DiceScorer import DiceScorer
 from dice_roller.DiceException import DiceException
 
 
-
 class DiceThrower(object):
     parser = DiceParser()
     roller = DiceRoller()

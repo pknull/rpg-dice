@@ -1,6 +1,31 @@
 from __future__ import division
-from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, Combine
+from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, Combine, Or, Suppress, nums, alphanums
 from dice_roller.DiceException import DiceException
+
+
+def clean_value(value):
+    int_val = None
+    try:
+        int_val = int(value)
+    except ValueError as ex:
+        int_val = str(int_val)
+
+    return str(int_val)
+
+
+def clean_sides(values):
+    list_type = "mixed"
+
+    for index, sub in enumerate(values):
+        try:
+            values[index] = int(sub)
+        except ValueError:
+            values[index] = str(sub)
+
+    if all(isinstance(sub, type(values[0])) for sub in values[1:]):
+        list_type = values[0].__class__.__name__
+
+    return values, list_type
 
 
 class DiceParser(object):
@@ -9,7 +34,6 @@ class DiceParser(object):
     roll_modifier_methods = ["x", "xx", "xp", "xxp", "r", "ro"]
     pool_modifier_methods = ["k", "kh", "kl", "d", "dh", "dl"]
     hidden_modifier_methods = ["b", "l"]
-    non_int_die = ['F', 'P']
 
     # collection of all methods
     all_methods = ' '.join(counter_methods + roll_modifier_methods + pool_modifier_methods + hidden_modifier_methods)
@@ -29,8 +53,8 @@ class DiceParser(object):
         # parse the expression, using our  expression
         try:
             parsed_string = dice_expr.parseString(expression)
-        except Exception:
-            raise DiceException('Unable to parse expression', 'Bad Expression')
+        except Exception as e:
+            raise DiceException('Unable to parse expression', 'Bad Expression - ' + str(e))
         # pull out a dictionary of the specific methods
         methods = self.clean_methods(parsed_string)
         return methods
@@ -51,19 +75,20 @@ class DiceParser(object):
     def get_expression(self, method_list):
         methods = method_list
 
-        numbers = "0123456789"
-
-        dice_numbers = numbers + "".join(self.non_int_die)
+        dice_numbers = nums
         dice = Literal("d")
 
-        operators = '+ -'
+        operators = '+ - / *'
         comparators = '< <= > >= = !='
-        digits = Word(numbers)
+        digits = Word(nums)
         dice_digits = Word(dice_numbers)
+        dice_faces = Word(alphanums + "," + "-")
+
+        list_value = (Suppress("{") + dice_faces + Suppress("}"))
 
         dice_expr = digits.setResultsName("number_of_dice") \
                     + dice \
-                    + dice_digits.setResultsName("sides") \
+                    + Or((dice_digits.setResultsName("sides"), list_value.setResultsName("sides"))) \
                     + Optional(oneOf(operators).setResultsName("dice_modifier")) \
                     + Optional(digits.setResultsName("dice_boost")) \
                     + Optional(oneOf(comparators).setResultsName("success_evaluator")) \
@@ -79,139 +104,143 @@ class DiceParser(object):
 
     def clean_methods(self, parsed):
         parsed_methods = parsed.methods
-        sides = self.clean_values(parsed.sides)
         methods = {}
 
-        # 0 or less sided dice are stupid.
-        if parsed.sides in self.non_int_die:
-            sides = parsed.sides
-        elif sides is None:
+        dirty_sides = parsed.sides[0].split(',')
+
+        if len(dirty_sides) > 1:
+            sides, list_type = clean_sides(dirty_sides)
+        elif len(dirty_sides) == 1:
+            sides_int = clean_value(parsed.sides)
+            if sides_int is None:
+                raise DiceException('Unable to parse expression', 'Unknown dice sides')
+            elif int(sides_int) <= 0:
+                raise DiceException('Unable to parse expression', 'Impossible dice faces')
+            elif int(sides_int) > 100:
+                raise DiceException('Unable to perform roll', 'Too many dice faces')
+            elif int(parsed.number_of_dice) > 200:
+                raise DiceException('Unable to perform roll', 'Too many dice requested')
+
+            sides = list(range(1, int(sides_int) + 1))
+            list_type = "int"
+
+        else:
             raise DiceException('Unable to parse expression', 'Unknown dice sides')
-        elif int(sides) <= 0:
-            raise DiceException('Unable to parse expression', 'Impossible dice faces')
-        elif int(sides) > 100:
-            raise DiceException('Unable to perform roll', 'Too many dice faces')
-        elif int(parsed.number_of_dice) > 200:
-            raise DiceException('Unable to perform roll', 'Too many dice requested')
 
-        for value in parsed_methods:
-            method_name = value.method_name
-            # default value is based on method
-            if value.method_value:
-                val = value.method_value
-            else:
-                if value.method_name in self.high_methods:
-                    val = sides
-                elif value.method_name in self.low_methods:
-                    val = '1'
+        # methods for ints
+
+        if list_type == "int":
+
+            for value in parsed_methods:
+                method_name = value.method_name
+                # default value is based on method
+                if value.method_value:
+                    val = value.method_value
                 else:
-                    val = '0'
-
-            # pool modifiers don't need methods (yet)
-            if value.method_name not in list(self.pool_modifier_methods):
-                if value.method_operator:
-                    if value.method_operator == '=':
-                        operator = '=='
+                    if value.method_name in self.high_methods:
+                        val = max(sides)
+                    elif value.method_name in self.low_methods:
+                        val = '1'
                     else:
-                        operator = value.method_operator
-                else:
-                    operator = '=='
+                        val = '0'
 
-            # keep
-            if method_name[0] == 'k':
-                layer = 'high'
-                if len(method_name) > 1:
-                    if method_name[1] == 'l':
-                        layer = 'low'
-                methods['k'] = {'val': self.clean_values(val), 'layer': layer}
-            # drop
-            elif method_name[0] == 'd':
-                layer = 'low'
-                if len(method_name) > 1:
-                    if method_name[1] == 'h':
-                        layer = 'high'
-                methods['d'] = {'val': self.clean_values(val), 'layer': layer}
-            # exploding flags
-            elif method_name[0] == 'x':
-                compound = False
-                penetrate = False
-                if len(method_name) > 1:
-                    if method_name[1] == 'x':
-                        compound = True
-                    elif method_name[1] == 'p':
-                        penetrate = True
-                    if len(method_name) > 2:
-                        if method_name[2] == 'p':
+                # pool modifiers don't need methods (yet)
+                if value.method_name not in list(self.pool_modifier_methods):
+                    if value.method_operator:
+                        if value.method_operator == '=':
+                            operator = '=='
+                        else:
+                            operator = value.method_operator
+                    else:
+                        operator = '=='
+
+                # keep
+                if method_name[0] == 'k':
+                    layer = 'high'
+                    if len(method_name) > 1:
+                        if method_name[1] == 'l':
+                            layer = 'low'
+                    methods['k'] = {'val': clean_value(val), 'layer': layer}
+                # drop
+                elif method_name[0] == 'd':
+                    layer = 'low'
+                    if len(method_name) > 1:
+                        if method_name[1] == 'h':
+                            layer = 'high'
+                    methods['d'] = {'val': clean_value(val), 'layer': layer}
+                # exploding flags
+                elif method_name[0] == 'x':
+                    compound = False
+                    penetrate = False
+                    if len(method_name) > 1:
+                        if method_name[1] == 'x':
+                            compound = True
+                        elif method_name[1] == 'p':
                             penetrate = True
-                methods['x'] = {'operator': operator, 'val': self.clean_values(val), 'compound': compound,
-                                'penetrate': penetrate}
-            # reroll flags
-            elif method_name[0] == 'r':
-                once = False
-                if len(method_name) > 1:
-                    if method_name[1] == 'o':
-                        once = True
-                methods['r'] = {'operator': operator, 'val': self.clean_values(val), 'once': once}
-            # default
+                        if len(method_name) > 2:
+                            if method_name[2] == 'p':
+                                penetrate = True
+                    methods['x'] = {'operator': operator, 'val': clean_value(val), 'compound': compound,
+                                    'penetrate': penetrate}
+                # reroll flags
+                elif method_name[0] == 'r':
+                    once = False
+                    if len(method_name) > 1:
+                        if method_name[1] == 'o':
+                            once = True
+                    methods['r'] = {'operator': operator, 'val': clean_value(val), 'once': once}
+                # default
+                else:
+                    methods[method_name] = {'operator': operator, 'val': clean_value(val)}
+
+            # success
+            if parsed.success_threshhold:
+                s_thresh = parsed.success_threshhold
             else:
-                methods[method_name] = {'operator': operator, 'val': self.clean_values(val)}
+                if list_type == "int":
+                    s_thresh = max(sides)
+                else:
+                    s_thresh = 0
 
-        # success
-        if parsed.success_threshhold:
-            s_thresh = parsed.success_threshhold
-        else:
-            s_thresh = sides
-
-        if parsed.success_evaluator:
-            if parsed.success_evaluator == '=':
-                s_eval = '=='
+            if parsed.success_evaluator:
+                if parsed.success_evaluator == '=':
+                    s_eval = '=='
+                else:
+                    s_eval = parsed.success_evaluator
             else:
-                s_eval = parsed.success_evaluator
-        else:
-            s_eval = '>='
+                s_eval = '>='
 
-        methods['s'] = {'operator': s_eval, 'val': self.clean_values(s_thresh)}
+            methods['s'] = {'operator': s_eval, 'val': clean_value(s_thresh)}
 
-        # boost
-        if parsed.dice_modifier:
-            b_mod = parsed.dice_modifier
-        else:
-            b_mod = '+'
+            # boost
+            if parsed.dice_modifier:
+                b_mod = parsed.dice_modifier
+            else:
+                b_mod = '+'
 
-        if parsed.dice_boost:
-            b_boost = parsed.dice_boost
-        else:
-            b_boost = '0'
+            if parsed.dice_boost:
+                b_boost = parsed.dice_boost
+            else:
+                b_boost = '0'
 
-        methods['b'] = {'operator': b_mod, 'val': self.clean_values(b_boost)}
+            methods['b'] = {'operator': b_mod, 'val': clean_value(b_boost)}
 
-        # Pool boost
-        if parsed.pool_modifier:
-            l_mod = parsed.pool_modifier
-        else:
-            l_mod = '+'
+            # Pool boost
+            if parsed.pool_modifier:
+                l_mod = parsed.pool_modifier
+            else:
+                l_mod = '+'
 
-        if parsed.pool_boost:
-            l_boost = parsed.pool_boost
-        else:
-            l_boost = '0'
+            if parsed.pool_boost:
+                l_boost = parsed.pool_boost
+            else:
+                l_boost = '0'
 
-        methods['l'] = {'operator': l_mod, 'val': self.clean_values(l_boost)}
-
-        # this is silly, but makes problems obvious in the parse debug.
-        # NO METHODS FOR NON INT DICE
-        if sides in self.non_int_die:
-            methods = {'l': methods['l']}
+            methods['l'] = {'operator': l_mod, 'val': clean_value(l_boost)}
 
         # take the remaining parsed items and put them in methods
-        methods['number_of_dice'] = self.clean_values(parsed.number_of_dice)
+        methods['number_of_dice'] = clean_value(parsed.number_of_dice)
         methods['sides'] = sides
+        methods['types'] = list_type
 
         return methods
-
-    def clean_values(self, value):
-        int_val = int(value) if value and value.isdecimal() else None
-        if isinstance(int_val, int):
-            return str(int_val)
-        else:
-            return int_val

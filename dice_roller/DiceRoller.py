@@ -16,7 +16,9 @@ class DiceRoller(object):
         roll_mod = self.dropper_keeper(roll, methods)
         return roll_mod
 
-    def roll_die(self, number, sides, methods={}):
+    def roll_die(self, number, sides, methods=None):
+        if methods is None:
+            methods = {}
         dice = {'natural': [], 'modified': []}
         full_roll = []
         die = Die(sides)
