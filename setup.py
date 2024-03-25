@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='dice_roller',
-    version=0.1,
+    version=0.2,
     description='A dice roller for processing RPG style dice expressions.',
     author='PKnull',
     author_email='louis.grenzebach@gmail.com',
