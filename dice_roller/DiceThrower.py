@@ -27,7 +27,6 @@ class DiceThrower(object):
             return 'Bad roll expression - ' + dexp
 
         # roll dice
-        print(parsed_roll)
         result = self.roller.roll(parsed_roll)
         self.result = result
 
@@ -44,9 +43,10 @@ class DiceThrower(object):
             result = self.roller.roll(parsed_equation[roll][0])
             parsed_equation[roll].append(result)
 
-            total = self.scorer.get_roll_total(result['modified'], parsed_equation[roll][0])
+            total = self.scorer.get_roll_total(
+                result['modified'], parsed_equation[roll][0]
+            )
             mod_deq = mod_deq.replace(roll, str(total))
-            print(mod_deq)
 
         full_result = sympy.sympify(mod_deq)
         return full_result, parsed_equation

@@ -33,7 +33,7 @@ class DiceScorer(object):
         rep.update(result)
         rep.update({'total': str(self.get_roll_total(result['modified'], parsed_roll))})
 
-        if parsed_roll['sides'] is not 'F':
+        if parsed_roll['sides'] != 'F':
             if 'f' in parsed_roll:
                 rep.update({'fail': str(self.get_count(result['modified'], 'f', parsed_roll))})
             rep.update({'success': str(self.get_count(result['modified'], 's', parsed_roll))})
