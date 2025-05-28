@@ -1,6 +1,23 @@
 # rpg-dice
 A simple RPG dice roller
 
+## Quick start
+
+1. Install the dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Use the `DiceThrower` class to roll dice:
+
+   ```python
+   from dice_roller.DiceThrower import DiceThrower
+   dice = DiceThrower()
+   result = dice.throw('2d6')
+   print(result)
+   ```
+
 ## More about our classes
 TBCL
 
