@@ -2,6 +2,8 @@
 
 A simple RPG dice roller
 
+> This project is partially managed by [Asha](https://github.com/pknull/asha), a Claude Code framework.
+
 ## Quick start
 
 1. Install the dependencies:
