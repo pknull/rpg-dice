@@ -33,20 +33,50 @@ is as follows (spaces for readablity only).
 This is our core roll.
 
 ```
-          N   d   N   (+|-)N   cmpN   McmpN   (+|-)N
-         ─┬─ ─┬─ ─┬─ ─┬────── ─┬──── ─┬───── ─┬──────
-# of Dice ┘   │   │   │        │      │       │
-Place Holder ─┘   │   │        │      │       │
-Number of Sides ──┘   │        │      │       │
-Dice Modifier ────────┘        │      │       │
-Success Handler ───────────────┘      │       │
-Modifier(s) Such as exploding. ───────┘       │
-Roll Modifier ────────────────────────────────┘
+          N   d   N   (+|-)N   =(+|-)N   cmpN   McmpN
+         ─┬─ ─┬─ ─┬─ ─┬────── ─┬─────── ─┬──── ─┬─────
+# of Dice ┘   │   │   │        │         │      │
+Place Holder ─┘   │   │        │         │      │
+Number of Sides ──┘   │        │         │      │
+Per-Die Modifier ─────┘        │         │      │
+Total Modifier ────────────────┘         │      │
+Success Handler ─────────────────────────┘      │
+Modifiers (x, kh, f, t, etc.) ─────────────────┘
 ```
 
-The above order is specific, and important. Not following the above format can lead to failure
-executing your roll and no one likes failures. That said, modifier may be placed in any order
-as they are parsed seperately from the rest of the roll.
+The above order is specific and important. Not following the above format can lead to failure
+executing your roll. The core structure (dice, per-die modifier, total modifier, success handler)
+must follow this order. However, the method modifiers (M) such as `f`, `x`, `xx`, `kh`, `r`, `t`,
+etc. may be placed in any order relative to each other.
+
+### Quick Reference: The Three Modifiers
+
+These look similar but do very different things:
+
+| Syntax | Name | What it does | Example |
+|--------|------|--------------|---------|
+| `+N` | Per-Die Modifier | Adds N to each die | `2d6+5` → [3,4] becomes [8,9] |
+| `=+N` | Total Modifier | Adds N to final total | `2d6=+5` → [3,4] total 7+5=12 |
+| `>=N` | Success Threshold | Counts dice meeting condition | `2d6>=5` → [3,6] = 1 success |
+
+**Combined example:** `5d10+5=+5>=10`
+- Roll 5d10: [4, 8, 7, 9, 6]
+- `+5` each die: [9, 13, 12, 14, 11]
+- `>=10` count successes: 4 (the 13, 12, 14, 11)
+- `=+5` add to total: 59 + 5 = 64
+
+Result: `{success: '4', total: '64', ...}`
+
+### Quick Reference: Success vs Pass
+
+| Field | Syntax | Question Answered |
+|-------|--------|-------------------|
+| `success` | `>=N` | How many dice meet the threshold? |
+| `pass` | `t>=N` | Does the total meet the target? |
+
+**Example:** `5d10>=8t>=30` answers both "how many hits?" and "did I beat the DC?"
+
+---
 
 Code wise, you'll just need to import the dice roller module, create an instance of the class
 and wham-o, you can start rolling dice!
@@ -100,15 +130,16 @@ This would constitute a 6 sided dice. You can also replace the number with a lis
 
 ---
 
-### BOOST
+### PER-DIE MODIFIER
 
-Sometimes you may want to modify the DICE value. You can do this by adding a modifier and value
-after the sides.
+Add a bonus to each individual die result. Place the modifier directly after the sides.
 
 ```
 dice.throw('2d6+4')
 {'natural': [4, 2], 'roll': '2d6+4', 'modified': [8, 6], 'success': '1', 'total': '14'}
 ```
+
+Each die gets +4: natural 4 becomes 8, natural 2 becomes 6.
 
 ---
 
@@ -254,20 +285,94 @@ dice.throw('10d6kl5')
 
 ---
 
-### Result Pool Boost (aka the laziest thing ever)
+### TOTAL MODIFIER
 
-You may want to adjust the total based on bonuses. This can be achieved by using the same format
-as the dice boost at the end (again) as a total boost. This doesn't effect the roll itself, just
-the total. Note you'll need to add a place holder for the dice modifier though as punishment for
-your (and mine) laziness.
+Add a bonus to the final total (not individual dice). Use `=+N` or `=-N` syntax.
 
 ```
- dice.throw('2d6+0+2')
+dice.throw('5d10=+5')
+{'natural': [3, 7, 2, 8, 4], 'roll': '5d10=+5', 'modified': [3, 7, 2, 8, 4], 'total': '29', 'success': '1'}
+```
+
+The dice stay unchanged; only the total is modified (24 + 5 = 29).
+
+#### Combining Per-Die and Total Modifiers
+
+You can use both in the same roll:
+
+```
+dice.throw('2d6+2=+5')
+{'natural': [3, 4], 'roll': '2d6+2=+5', 'modified': [5, 6], 'total': '16', 'success': '0'}
+```
+
+Each die gets +2 (modified: 5, 6), then +5 to total (11 + 5 = 16).
+
+#### Legacy Syntax
+
+The older `+0+N` syntax still works for backwards compatibility:
+
+```
+dice.throw('2d6+0+2')
 {'natural': [1, 2], 'roll': '2d6+0+2', 'modified': [1, 2], 'success': '0', 'total': '5'}
-
-dice.throw('2dF+0+2')
-{'natural': [1, 0], 'roll': '2dF+0+2', 'modified': [1, 0], 'total': '3'}
 ```
+
+---
+
+### TOTAL CHECK
+
+Check if the final total meets a condition. Use `t` followed by a comparator and target value.
+Returns `pass: '1'` if the condition is met, `pass: '0'` otherwise.
+
+```
+dice.throw('2d10t>=15')
+{'natural': [8, 9], 'roll': '2d10t>=15', 'modified': [8, 9], 'total': '17', 'success': '0', 'pass': '1'}
+```
+
+The total (17) is >= 15, so pass is '1'.
+
+#### Combining with Total Modifier
+
+Total check evaluates after total modifiers are applied:
+
+```
+dice.throw('2d6=+5t>=15')
+{'natural': [4, 5], 'roll': '2d6=+5t>=15', 'modified': [4, 5], 'total': '14', 'success': '0', 'pass': '0'}
+```
+
+Each die stays natural, +5 to total (9 + 5 = 14), then check if 14 >= 15 (fails).
+
+#### Other Comparators
+
+```
+dice.throw('2d6t=7')    # Exact match - pass if total equals 7
+dice.throw('2d6t>10')   # Greater than - pass if total > 10
+dice.throw('2d6t<=5')   # Less than or equal - pass if total <= 5
+```
+
+#### Combining with Success Counting
+
+Use success counting and total check together to answer "how many hits?" and "did I beat the DC?" in one roll:
+
+```
+dice.throw('5d10>=8t>=25')
+{'natural': [6, 4, 10, 8, 8], 'roll': '5d10>=8t>=25', 'modified': [6, 4, 10, 8, 8], 'total': '36', 'success': '3', 'pass': '1'}
+```
+
+- `>=8` counts successes (3 dice rolled 8 or higher)
+- `t>=25` checks if total meets target (36 >= 25, passes)
+
+#### Full Combined Example
+
+All modifiers can work together:
+
+```
+dice.throw('5d10+2>=10t>=40')
+{'natural': [7, 9, 3, 8, 6], 'roll': '5d10+2>=10t>=40', 'modified': [9, 11, 5, 10, 8], 'total': '43', 'success': '2', 'pass': '1'}
+```
+
+- `+2` adds 2 to each die
+- `>=10` counts modified dice >= 10 (2 successes)
+- `t>=40` checks if total >= 40 (43 >= 40, passes)
 
 ---
 

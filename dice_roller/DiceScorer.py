@@ -1,10 +1,10 @@
 import sympy
 
 
-class DiceScorer(object):
+class DiceScorer:
 
     def __init__(self):
-        return
+        pass
 
     def get_roll_total(self, result, parsed_roll):
 
@@ -27,7 +27,7 @@ class DiceScorer(object):
         counter = 0
         if type in parsed_roll:
             for i in result:
-                if sympy.sympify(str(i) + parsed_roll[type]['operator'] + str(max(parsed_roll[type]['val']))):
+                if sympy.sympify(str(i) + parsed_roll[type]['operator'] + parsed_roll[type]['val']):
                     counter += 1
         return counter
 
@@ -36,7 +36,8 @@ class DiceScorer(object):
         rep = {}
         rep.update({'roll': dexp})
         rep.update(result)
-        rep.update({'total': str(self.get_roll_total(result['modified'], parsed_roll))})
+        total = self.get_roll_total(result['modified'], parsed_roll)
+        rep.update({'total': str(total)})
 
         if parsed_roll['types'] == "int":
             rep.update({'success': str(self.get_count(result['modified'], 's', parsed_roll))})
@@ -46,4 +47,7 @@ class DiceScorer(object):
                 rep.update({'nf': str(self.get_count(result['natural'], 'nf', parsed_roll))})
             if 'ns' in parsed_roll:
                 rep.update({'ns': str(self.get_count(result['natural'], 'ns', parsed_roll))})
+            if 't' in parsed_roll:
+                passed = sympy.sympify(str(total) + parsed_roll['t']['operator'] + parsed_roll['t']['val'])
+                rep.update({'pass': '1' if passed else '0'})
         return rep

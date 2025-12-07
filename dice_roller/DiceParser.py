@@ -1,16 +1,12 @@
-from __future__ import division
-from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, Combine, Or, Suppress, nums, alphanums
+from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, Combine, Or, Suppress, Regex, nums, alphanums
 from dice_roller.DiceException import DiceException
 
 
 def clean_value(value):
-    int_val = None
     try:
-        int_val = int(value)
-    except ValueError as ex:
-        int_val = str(int_val)
-
-    return str(int_val)
+        return str(int(value))
+    except (ValueError, TypeError):
+        return None
 
 
 def clean_sides(values):
@@ -28,22 +24,20 @@ def clean_sides(values):
     return values, list_type
 
 
-class DiceParser(object):
-    # methods (grouped by defaults)
+class DiceParser:
     counter_methods = ["s", "f", "ns", "nf"]
     roll_modifier_methods = ["x", "xx", "xp", "xxp", "r", "ro"]
     pool_modifier_methods = ["k", "kh", "kl", "d", "dh", "dl"]
+    total_check_methods = ["t"]
     hidden_modifier_methods = ["b", "l"]
 
-    # collection of all methods
-    all_methods = ' '.join(counter_methods + roll_modifier_methods + pool_modifier_methods + hidden_modifier_methods)
+    all_methods = ' '.join(counter_methods + roll_modifier_methods + pool_modifier_methods + total_check_methods + hidden_modifier_methods)
 
-    # high and low face defaults
     high_methods = ["s", "x", "xx", "xp", "xxp", "k", "kh", "dh", "ns"]
     low_methods = ["f", "kl", "d", "dl", "r", "ro", "nf"]
 
     def __init__(self):
-        return
+        pass
 
     # this will parse one dice roll
     def parse_input(self, expression):
@@ -86,11 +80,16 @@ class DiceParser(object):
 
         list_value = (Suppress("{") + dice_faces + Suppress("}"))
 
+        # Total modifier: =+N or =-N syntax (must come before success_evaluator to prevent = capture)
+        total_modifier = Combine(Literal("=") + oneOf('+ -')).setResultsName("total_modifier") \
+                         + digits.setResultsName("total_boost")
+
         dice_expr = digits.setResultsName("number_of_dice") \
                     + dice \
                     + Or((dice_digits.setResultsName("sides"), list_value.setResultsName("sides"))) \
                     + Optional(oneOf(operators).setResultsName("dice_modifier")) \
                     + Optional(digits.setResultsName("dice_boost")) \
+                    + Optional(total_modifier) \
                     + Optional(oneOf(comparators).setResultsName("success_evaluator")) \
                     + Optional(digits.setResultsName("success_threshhold")) \
                     + ZeroOrMore(Group(oneOf(methods).setResultsName('method_name') \
@@ -225,15 +224,16 @@ class DiceParser(object):
 
             methods['b'] = {'operator': b_mod, 'val': clean_value(b_boost)}
 
-            # Pool boost
-            if parsed.pool_modifier:
+            # Total/Pool boost - new =+N syntax takes precedence, fallback to legacy +N+N
+            if parsed.total_modifier:
+                # Strip the '=' prefix, keep just '+' or '-'
+                l_mod = parsed.total_modifier[1]
+                l_boost = parsed.total_boost
+            elif parsed.pool_modifier:
                 l_mod = parsed.pool_modifier
+                l_boost = parsed.pool_boost if parsed.pool_boost else '0'
             else:
                 l_mod = '+'
-
-            if parsed.pool_boost:
-                l_boost = parsed.pool_boost
-            else:
                 l_boost = '0'
 
             methods['l'] = {'operator': l_mod, 'val': clean_value(l_boost)}

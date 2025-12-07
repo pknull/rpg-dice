@@ -1,12 +1,11 @@
 import random
 
 
-class Die(object):
-    sides = 0
-    showing = 0
+class Die:
 
     def __init__(self, sides):
         self.sides = sides
+        self.showing = 0
         self.roll()
 
     def roll(self):

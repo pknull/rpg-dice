@@ -1,5 +1,3 @@
-from __future__ import division
-
 import sympy
 
 from dice_roller.DiceParser import DiceParser
@@ -8,14 +6,13 @@ from dice_roller.DiceScorer import DiceScorer
 from dice_roller.DiceException import DiceException
 
 
-class DiceThrower(object):
-    parser = DiceParser()
-    roller = DiceRoller()
-    scorer = DiceScorer()
-    result = []
+class DiceThrower:
 
     def __init__(self):
-        return
+        self.parser = DiceParser()
+        self.roller = DiceRoller()
+        self.scorer = DiceScorer()
+        self.result = []
 
     def throw(self, dexp='1d1'):
 

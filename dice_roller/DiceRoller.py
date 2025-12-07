@@ -3,10 +3,10 @@ from dice_roller.DiceException import DiceException
 import sympy
 
 
-class DiceRoller(object):
+class DiceRoller:
 
     def __init__(self):
-        return
+        pass
 
     def roll(self, methods):
         sides = methods['sides']
