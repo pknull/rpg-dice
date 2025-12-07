@@ -1,6 +1,6 @@
 ---
 version: 1.0.0
-lastUpdated: 2025-12-06
+lastUpdated: 2025-12-07
 lifecycle: active
 stakeholder: pknull
 changeTrigger: session-completion
@@ -12,42 +12,35 @@ dependencies: [projectbrief.md, techEnvironment.md]
 
 ## Current Status
 
-**Phase**: Asha Framework Onboarding
-**Date**: 2025-12-06
-**Focus**: Setting up Memory Bank structure for dice roller package
+**Phase**: Feature Complete
+**Date**: 2025-12-07
+**Version**: v0.3
 
-## Recent Changes
+## Recent Changes (v0.3)
 
-- Added asha submodule to project
-- Created CLAUDE.md referencing @asha/CORE.md
-- Initialized Memory directory structure
-- Created projectbrief.md documenting package architecture
-- Creating activeContext.md (this file)
+- **Subrolls**: Dice expressions now work anywhere a number value is expected
+  - Total modifiers: `1d20=+1d4`
+  - Comparators: `10d6>=1d3`
+  - Method values: `10d6kh1d4`
+- **Chained total modifiers**: `3d6=+10=-3` accumulates correctly
+- **Removed legacy pool_modifier**: Use `=+`/`=-` syntax instead
+- **Documentation updated**: README.md and dice_roller_cheat_sheet.md
 
-## Next Steps
+## Previous Changes (v0.2)
 
-1. Create techEnvironment.md with package-specific tooling
-2. Symlink communicationStyle.md from /home/pknull/Obsidian/AAS/Memory/
-3. Test Asha framework integration
+- Total check syntax (`t>=N`)
+- Total modifier syntax (`=+N`, `=-N`)
+- AnyDice-style probability analyzer
+- Asha framework integration
 
 ## Current Branch
 
 `master`
 
-## Active Work Areas
-
-- Asha framework integration
-- Memory Bank establishment
-- Project documentation alignment
-
 ## Known Issues
 
 None currently identified.
 
-## Open Questions
-
-None currently.
-
 ## Session Notes
 
-Initial Asha onboarding session - establishing Memory Bank foundation for rpg-dice utility package following pk.shado pattern.
+v0.3 release - Subrolls feature complete. All 93 tests pass.

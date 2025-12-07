@@ -7,8 +7,10 @@ Layout of this cheat sheet:
 <example>
 n = dice count
 y = dice size
-c = Some constant value for comparisons
+c = constant OR dice expression (subroll)
 ```
+
+**Subrolls:** Anywhere you see `c`, you can use a dice expression like `1d4` instead of a number.
 
 ## Basic Roll
 
@@ -17,18 +19,23 @@ ndy
 10d6
 ```
 
-## Boost Dice Roll Values
+## Boost Dice Roll Values (Per-Die)
 
 ```
 ndy+c
 10d6+4
 ```
 
-## Boost Dice Roll Ending Total
+## Boost Dice Roll Total
 
 ```
-ndy+0+c
-2d6+0+2
+ndy=+c
+ndy=-c
+ndy=+c=-c      (chainable)
+2d6=+5
+3d6=+10=-3
+1d20=+1d4      (with subroll)
+3d6=+1d4=-1d2  (chained subrolls)
 ```
 
 ## Exploding Dice
@@ -36,6 +43,7 @@ ndy+0+c
 ```
 ndyx[>,<,>=,<=,==]c
 10d6x>=5
+10d6x>=1d3     (subroll threshold)
 ```
 
 ## Count Successes
@@ -43,11 +51,12 @@ ndyx[>,<,>=,<=,==]c
 ```
 ndy[>,<,>=,<=,==]c
 10d6>=5
+10d6>=1d4      (subroll threshold)
 ```
 
 ## Count Unmodified Successes
 
-This will count the amount of times number `c` shows up in a roll and consider it a natural success. 
+This will count the amount of times number `c` shows up in a roll and consider it a natural success.
 
 ```
 ndynsc
@@ -59,11 +68,12 @@ ndynsc
 ```
 ndyf[>,<,>=,<=,==]c
 10d6f<3
+10d6f<=1d2     (subroll threshold)
 ```
 
 ## Count Unmodified Failures
 
-This will count the amount of times number `c` shows up in a roll and consider it a natural failures. 
+This will count the amount of times number `c` shows up in a roll and consider it a natural failures.
 
 ```
 ndynfc
@@ -77,6 +87,7 @@ Keep High
 ```
 ndykhc
 10d6kh5
+10d6kh1d4      (subroll count)
 ```
 
 Keep Low
@@ -100,6 +111,15 @@ ndydlc
 10d6dl5
 ```
 
+## Reroll
+
+```
+ndyr[>,<,>=,<=,==]c
+10d6r<=2
+10d6r<=1d2     (subroll threshold)
+10d6ro<=2      (reroll once)
+```
+
 ## Compounding Dice
 
 Similar to the exploding dice
@@ -107,6 +127,7 @@ Similar to the exploding dice
 ```
 ndyxx[>,<,>=,<=,==]c
 10d6xx>=5
+10d6xx>=1d3    (subroll threshold)
 ```
 
 ## Penetrating Dice
@@ -118,17 +139,30 @@ ndyxp[>,<,>=,<=,==]c
 10d6xp>=5
 ```
 
+## Total Check
+
+Check if total meets a target (returns pass: '1' or '0')
+
+```
+ndyt[>,<,>=,<=,==]c
+2d6t>=7
+1d20=+1d4t>=15   (with subroll modifier)
+```
+
 ## Syntax Structure
 
 ```
-          N   d   N   (+|-)N   cmpN   McmpN   (+|-)N
-         ─┬─ ─┬─ ─┬─ ─┬────── ─┬──── ─┬───── ─┬──────
-# of Dice ┘   │   │   │        │      │       │
-Place Holder ─┘   │   │        │      │       │
-Number of Sides ──┘   │        │      │       │
-Dice Modifier ────────┘        │      │       │
-Success Handler ───────────────┘      │       │
-Modifier(s) Such as exploding. ───────┘       │
-Roll Modifier ────────────────────────────────┘
+          N   d   N   (+|-)N   (=+|=-)N...   cmpN   McmpN   t cmpN
+         ─┬─ ─┬─ ─┬─ ─┬────── ─┬──────────── ─┬──── ─┬───── ─┬─────
+# of Dice ┘   │   │   │        │              │      │       │
+Place Holder ─┘   │   │        │              │      │       │
+Number of Sides ──┘   │        │              │      │       │
+Per-Die Modifier ─────┘        │              │      │       │
+Total Modifier (chainable) ────┘              │      │       │
+Success Handler ──────────────────────────────┘      │       │
+Method Modifiers (x, kh, r, f, etc.) ────────────────┘       │
+Total Check ─────────────────────────────────────────────────┘
 ```
+
+Any `N` value in modifiers can be a dice expression (subroll) like `1d4`.
 

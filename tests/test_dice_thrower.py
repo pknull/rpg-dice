@@ -211,10 +211,10 @@ class TestTotalModifier:
         raw_total = sum(result['modified'])
         assert int(result['total']) == raw_total + 5
 
-    def test_legacy_syntax_still_works(self, dice):
-        result = dice.throw('2d6+0+2')
+    def test_chained_total_modifiers(self, dice):
+        result = dice.throw('2d6=+10=-3')
         raw_total = sum(result['modified'])
-        assert int(result['total']) == raw_total + 2
+        assert int(result['total']) == raw_total + 7  # +10 - 3 = +7
 
 
 class TestCustomFaces:

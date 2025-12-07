@@ -67,6 +67,30 @@ These look similar but do very different things:
 
 Result: `{success: '4', total: '64', ...}`
 
+### Subrolls (Dice as Values)
+
+Anywhere you see `N` (a number), you can use a dice expression instead. The dice is rolled first and its result replaces the value.
+
+| Position | Static | With Subroll |
+|----------|--------|--------------|
+| Total Modifier | `=+5` | `=+1d4` |
+| Total Modifier Chain | `=+10=-3` | `=+1d6=-1d4` |
+| Success Threshold | `>=5` | `>=1d6` |
+| Method Value | `kh3` | `kh1d4` |
+| Explode Threshold | `x>=5` | `x>=1d3` |
+| Reroll Threshold | `r<=2` | `r<=1d2` |
+
+**Example:** `1d20=+1d4t>=15`
+- Roll 1d20: 12
+- Roll subroll 1d4: 3
+- Add to total: 12 + 3 = 15
+- Check t>=15: pass!
+
+**Chained subrolls:** `3d6=+1d4=-1d2`
+- Roll 3d6: [4, 3, 5] = 12
+- Roll 1d4: 3, Roll 1d2: 1
+- Total: 12 + 3 - 1 = 14
+
 ### Quick Reference: Success vs Pass
 
 | Field | Syntax | Question Answered |
@@ -212,6 +236,13 @@ Exploding dice roll an additional die when the comparator, on that die, is rolle
 
 This would explode any dice equal or greater than 5 in our roll.
 
+With subroll threshold:
+
+```
+dice.throw('10d6x>=1d3')
+# 1d3 rolls 2, so explode on >= 2
+```
+
 #### Compounding Dice xxN
 
 Sometimes, you may want the exploded dice rolls to be added together under the same, original roll.
@@ -249,6 +280,13 @@ dice.throw('10d6r<3')
 {'natural': [1, 1, 4, 2, 4, 5, 2, 1, 5, 2], 'roll': '10d6r<3', 'modified': [3, 5, 4, 5, 4, 5, 6, 3, 5, 6], 'success': '2', 'total': '46'}
 ```
 
+With subroll threshold:
+
+```
+dice.throw('10d6r<=1d2')
+# 1d2 rolls 2, so reroll any dice <= 2
+```
+
 #### Reroll Once roN
 
 If the dice matches, reroll. Defaults to lowest. Reroll only once.
@@ -283,6 +321,13 @@ dice.throw('10d6kl5')
 {'natural': [5, 3, 6, 5, 1, 4, 5, 2, 6, 2], 'roll': '10d6kl5', 'modified': [1, 2, 2, 3, 4], 'success': '0', 'total': '12'}
 ```
 
+With subroll count (keep a random number of dice):
+
+```
+dice.throw('10d6kh1d4')
+# 1d4 rolls 3, so keep highest 3
+```
+
 ---
 
 ### TOTAL MODIFIER
@@ -307,13 +352,25 @@ dice.throw('2d6+2=+5')
 
 Each die gets +2 (modified: 5, 6), then +5 to total (11 + 5 = 16).
 
-#### Legacy Syntax
+#### Chained Total Modifiers
 
-The older `+0+N` syntax still works for backwards compatibility:
+You can chain multiple total modifiers:
 
 ```
-dice.throw('2d6+0+2')
-{'natural': [1, 2], 'roll': '2d6+0+2', 'modified': [1, 2], 'success': '0', 'total': '5'}
+dice.throw('3d6=+10=-3')
+{'natural': [4, 3, 5], 'roll': '3d6=+10=-3', 'modified': [4, 3, 5], 'total': '19', 'success': '0'}
+```
+
+The modifiers accumulate: +10 - 3 = +7, so 12 + 7 = 19.
+
+#### Subrolls in Total Modifiers
+
+Use dice expressions instead of static numbers:
+
+```
+dice.throw('3d6=+1d4=-1d2')
+# 1d4 rolls 3, 1d2 rolls 1
+{'natural': [4, 3, 5], 'roll': '3d6=+1d4=-1d2', 'modified': [4, 3, 5], 'total': '14', 'success': '0'}
 ```
 
 ---

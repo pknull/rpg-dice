@@ -1,5 +1,7 @@
+import re
 from pyparsing import Literal, Word, oneOf, Optional, Group, ZeroOrMore, Combine, Or, Suppress, Regex, nums, alphanums
 from dice_roller.DiceException import DiceException
+from dice_roller.Die import Die
 
 
 def clean_value(value):
@@ -37,10 +39,59 @@ class DiceParser:
     low_methods = ["f", "kl", "d", "dl", "r", "ro", "nf"]
 
     def __init__(self):
-        pass
+        self.last_subrolls = []  # Track subrolls from last parse
+
+    def resolve_subrolls(self, expression):
+        """
+        Pre-process expression to resolve dice in modifier positions.
+        E.g., '1d20=+1d3>=17' becomes '1d20=+2>=17' (where 2 is the 1d3 result)
+
+        Subrolls are dice expressions after arithmetic operators (+, -, *, /)
+        or total modifiers (=+, =-). They get rolled and replaced with their total.
+        """
+        self.last_subrolls = []
+
+        # Match: operator, comparator, or method prefix followed by dice expression
+        # Operators: =+, =-, +, -, *, /
+        # Comparators: >=, <=, >, <, =, !=
+        # Methods: kh, kl, dh, dl, k, d, x, xx, xp, xxp, r, ro, s, f, ns, nf, t
+        # \d+d\d+ matches dice like 1d6, 2d10
+        # (?![xrkd]) negative lookahead prevents matching when followed by die-modifying methods
+        subroll_pattern = r'(=?[+\-*/]|>=|<=|!=|>|<|=|kh|kl|dh|dl|xxp|xx|xp|x|ro|r|ns|nf|s|f|t|k|d)(\d+d\d+)(?![xrkd])'
+
+        def roll_and_replace(match):
+            operator = match.group(1)
+            dice_expr = match.group(2)
+            result = self._quick_roll(dice_expr)
+            self.last_subrolls.append({
+                'expression': dice_expr,
+                'result': result,
+                'operator': operator
+            })
+            return f"{operator}{result}"
+
+        return re.sub(subroll_pattern, roll_and_replace, expression)
+
+    def _quick_roll(self, dice_expr):
+        """Roll a simple NdS expression and return total as int"""
+        match = re.match(r'(\d+)d(\d+)', dice_expr)
+        if not match:
+            return 0
+        num_dice = int(match.group(1))
+        sides = int(match.group(2))
+
+        die = Die(list(range(1, sides + 1)))
+        total = 0
+        for _ in range(num_dice):
+            die.roll()
+            total += die.showing
+        return total
 
     # this will parse one dice roll
     def parse_input(self, expression):
+        # Resolve any subrolls (dice in modifier positions) first
+        expression = self.resolve_subrolls(expression)
+
         # create the parsing expression based on our method list
         dice_expr = self.get_expression(self.all_methods)
 
@@ -73,31 +124,39 @@ class DiceParser:
         dice = Literal("d")
 
         operators = '+ - / *'
-        comparators = '< <= > >= = !='
+        # Use regex for = to prevent matching =+ or =- (total_modifier syntax)
+        eq_not_total_mod = Regex(r'=(?![+-])')
+        other_comparators = oneOf('< <= > >= !=')
+        comparators_expr = eq_not_total_mod | other_comparators
         digits = Word(nums)
         dice_digits = Word(dice_numbers)
         dice_faces = Word(alphanums + "," + "-")
 
         list_value = (Suppress("{") + dice_faces + Suppress("}"))
 
-        # Total modifier: =+N or =-N syntax (must come before success_evaluator to prevent = capture)
-        total_modifier = Combine(Literal("=") + oneOf('+ -')).setResultsName("total_modifier") \
-                         + digits.setResultsName("total_boost")
+        # Total modifier: =+N or =-N syntax, can be chained (e.g., =+10=-3)
+        total_modifier = Group(
+            Combine(Literal("=") + oneOf('+ -')).setResultsName("mod_op")
+            + digits.setResultsName("mod_val")
+        )
+
+        # Total check: >=N or similar at end of expression, checks if total meets threshold
+        total_check = comparators_expr.copy().setResultsName("total_check_op") \
+                      + digits.setResultsName("total_check_val")
 
         dice_expr = digits.setResultsName("number_of_dice") \
                     + dice \
                     + Or((dice_digits.setResultsName("sides"), list_value.setResultsName("sides"))) \
                     + Optional(oneOf(operators).setResultsName("dice_modifier")) \
                     + Optional(digits.setResultsName("dice_boost")) \
-                    + Optional(total_modifier) \
-                    + Optional(oneOf(comparators).setResultsName("success_evaluator")) \
+                    + ZeroOrMore(total_modifier).setResultsName("total_modifiers") \
+                    + Optional(comparators_expr.setResultsName("success_evaluator")) \
                     + Optional(digits.setResultsName("success_threshhold")) \
                     + ZeroOrMore(Group(oneOf(methods).setResultsName('method_name') \
-                                       + Optional(oneOf(comparators).setResultsName("method_operator")) \
+                                       + Optional(comparators_expr.copy().setResultsName("method_operator")) \
                                        + Optional(digits.setResultsName("method_value"))).setResultsName('methods',
                                                                                                          True)) \
-                    + Optional(oneOf(operators).setResultsName("pool_modifier")) \
-                    + Optional(digits.setResultsName("pool_boost"))
+                    + Optional(total_check)
 
         return dice_expr
 
@@ -224,19 +283,36 @@ class DiceParser:
 
             methods['b'] = {'operator': b_mod, 'val': clean_value(b_boost)}
 
-            # Total/Pool boost - new =+N syntax takes precedence, fallback to legacy +N+N
-            if parsed.total_modifier:
-                # Strip the '=' prefix, keep just '+' or '-'
-                l_mod = parsed.total_modifier[1]
-                l_boost = parsed.total_boost
-            elif parsed.pool_modifier:
-                l_mod = parsed.pool_modifier
-                l_boost = parsed.pool_boost if parsed.pool_boost else '0'
+            # Total boost - =+N=-M syntax accumulates
+            if parsed.total_modifiers:
+                # Accumulate all total modifiers: =+10=-3 becomes +7
+                total_adjustment = 0
+                for mod in parsed.total_modifiers:
+                    op = mod.mod_op[1]  # '+' or '-' (skip the '=')
+                    val = int(mod.mod_val)
+                    if op == '+':
+                        total_adjustment += val
+                    else:
+                        total_adjustment -= val
+                if total_adjustment >= 0:
+                    l_mod = '+'
+                    l_boost = str(total_adjustment)
+                else:
+                    l_mod = '-'
+                    l_boost = str(abs(total_adjustment))
             else:
                 l_mod = '+'
                 l_boost = '0'
 
             methods['l'] = {'operator': l_mod, 'val': clean_value(l_boost)}
+
+            # Total check: >=N at end of expression checks if total meets threshold
+            if parsed.total_check_op:
+                t_op = parsed.total_check_op
+                if t_op == '=':
+                    t_op = '=='
+                t_val = parsed.total_check_val if parsed.total_check_val else '0'
+                methods['t'] = {'operator': t_op, 'val': clean_value(t_val)}
 
         # take the remaining parsed items and put them in methods
         methods['number_of_dice'] = clean_value(parsed.number_of_dice)
