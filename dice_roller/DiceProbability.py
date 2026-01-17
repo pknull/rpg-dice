@@ -5,7 +5,7 @@ import itertools as it
 from math import factorial, sqrt
 from dice_roller.DiceParser import DiceParser
 from dice_roller.DiceThrower import DiceThrower
-import sympy
+from dice_roller.safe_compare import safe_compare
 
 
 class DiceProbability:
@@ -183,7 +183,7 @@ class DiceProbability:
 
         # Count successes per die face (after per-die mod)
         success_faces = sum(1 for face in sides
-                          if sympy.sympify(f"{face + per_die_mod}{s_op}{s_val}"))
+                          if safe_compare(face + per_die_mod, s_op, s_val))
 
         # If keep/drop, enumerate
         if 'k' in parsed or 'd' in parsed:
@@ -227,7 +227,7 @@ class DiceProbability:
             sorted_roll = sorted(roll, reverse=keep_high)
             kept = sorted_roll[:keep_n]
             successes = sum(1 for v in kept
-                          if sympy.sympify(f"{v + per_die_mod}{s_op}{s_val}"))
+                          if safe_compare(v + per_die_mod, s_op, s_val))
             dist[successes] = dist.get(successes, Fraction(0)) + Fraction(1, total_outcomes)
 
         return dist
@@ -239,7 +239,7 @@ class DiceProbability:
 
         pass_prob = Fraction(0)
         for total, prob in dist.items():
-            if sympy.sympify(f"{total}{t_op}{t_val}"):
+            if safe_compare(total, t_op, t_val):
                 pass_prob += prob
 
         return pass_prob
@@ -372,7 +372,7 @@ class DiceProbability:
 
     def calc(self, op, val, space):
         """Subset of sample space for which a condition is true."""
-        return {element for element in space if sympy.sympify(str(element) + op + val)}
+        return {element for element in space if safe_compare(element, op, val)}
 
     def binomial(self, x, y):
         try:

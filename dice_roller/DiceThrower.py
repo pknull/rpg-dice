@@ -1,9 +1,8 @@
-import sympy
-
 from dice_roller.DiceParser import DiceParser
 from dice_roller.DiceRoller import DiceRoller
 from dice_roller.DiceScorer import DiceScorer
 from dice_roller.DiceException import DiceException
+from dice_roller.safe_compare import safe_eval_arithmetic
 
 
 class DiceThrower:
@@ -44,5 +43,5 @@ class DiceThrower:
             )
             mod_deq = mod_deq.replace(roll, str(total))
 
-        full_result = sympy.sympify(mod_deq)
+        full_result = safe_eval_arithmetic(mod_deq)
         return full_result, parsed_equation

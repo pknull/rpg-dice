@@ -1,6 +1,6 @@
 from dice_roller.Die import Die
 from dice_roller.DiceException import DiceException
-import sympy
+from dice_roller.safe_compare import safe_compare, safe_arithmetic
 
 
 class DiceRoller:
@@ -29,8 +29,8 @@ class DiceRoller:
 
             # reroll
             if 'r' in methods:
-                if sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
-                    while sympy.sympify(str(roll) + methods['r']['operator'] + methods['r']['val']):
+                if safe_compare(roll, methods['r']['operator'], methods['r']['val']):
+                    while safe_compare(roll, methods['r']['operator'], methods['r']['val']):
                         die.roll()
                         roll = die.showing
                         if methods['r']['once']:
@@ -38,12 +38,11 @@ class DiceRoller:
 
             # boost
             if 'b' in methods:
-                roll = sympy.sympify(
-                    str(roll) + methods['b']['operator'] + methods['b']['val'])
+                roll = safe_arithmetic(roll, methods['b']['operator'], methods['b']['val'])
 
             # explode
             if 'x' in methods:
-                if sympy.sympify(str(roll) + methods['x']['operator'] + methods['x']['val']):
+                if safe_compare(roll, methods['x']['operator'], methods['x']['val']):
                     try:
                         explode = self.roll_die(1, sides, methods)
                     except RuntimeError:

@@ -1,4 +1,4 @@
-import sympy
+from dice_roller.safe_compare import safe_compare, safe_arithmetic
 
 
 class DiceScorer:
@@ -17,7 +17,7 @@ class DiceScorer:
             core = sum(int(i) for i in result)
 
         if 'l' in parsed_roll:
-            mod_core = sympy.sympify(str(core) + parsed_roll['l']['operator'] + parsed_roll['l']['val'])
+            mod_core = safe_arithmetic(core, parsed_roll['l']['operator'], parsed_roll['l']['val'])
         else:
             mod_core = core
 
@@ -27,7 +27,7 @@ class DiceScorer:
         counter = 0
         if type in parsed_roll:
             for i in result:
-                if sympy.sympify(str(i) + parsed_roll[type]['operator'] + parsed_roll[type]['val']):
+                if safe_compare(i, parsed_roll[type]['operator'], parsed_roll[type]['val']):
                     counter += 1
         return counter
 
@@ -48,6 +48,6 @@ class DiceScorer:
             if 'ns' in parsed_roll:
                 rep.update({'ns': str(self.get_count(result['natural'], 'ns', parsed_roll))})
             if 't' in parsed_roll:
-                passed = sympy.sympify(str(total) + parsed_roll['t']['operator'] + parsed_roll['t']['val'])
+                passed = safe_compare(total, parsed_roll['t']['operator'], parsed_roll['t']['val'])
                 rep.update({'pass': '1' if passed else '0'})
         return rep
