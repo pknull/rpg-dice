@@ -21,9 +21,17 @@ A simple RPG dice roller
    print(result)
    ```
 
-## More about our classes
+## Classes
 
-TBCL
+| Class | Purpose |
+|-------|---------|
+| `DiceThrower` | Main entry point - parses and executes dice expressions |
+| `DiceParser` | Parses dice notation strings into executable components |
+| `DiceRoller` | Handles the actual dice rolling logic |
+| `DiceScorer` | Calculates successes, failures, and totals |
+| `DiceProbability` | Statistical analysis and probability calculations |
+| `Die` | Represents a single die with customizable sides |
+| `DiceException` | Custom exception for dice-related errors |
 
 ## Explain the roll format
 
@@ -60,6 +68,7 @@ These look similar but do very different things:
 | `>=N` | Success Threshold | Counts dice meeting condition | `2d6>=5` → [3,6] = 1 success |
 
 **Combined example:** `5d10+5=+5>=10`
+
 - Roll 5d10: [4, 8, 7, 9, 6]
 - `+5` each die: [9, 13, 12, 14, 11]
 - `>=10` count successes: 4 (the 13, 12, 14, 11)
@@ -81,12 +90,14 @@ Anywhere you see `N` (a number), you can use a dice expression instead. The dice
 | Reroll Threshold | `r<=2` | `r<=1d2` |
 
 **Example:** `1d20=+1d4t>=15`
+
 - Roll 1d20: 12
 - Roll subroll 1d4: 3
 - Add to total: 12 + 3 = 15
 - Check t>=15: pass!
 
 **Chained subrolls:** `3d6=+1d4=-1d2`
+
 - Roll 3d6: [4, 3, 5] = 12
 - Roll 1d4: 3, Roll 1d2: 1
 - Total: 12 + 3 - 1 = 14
@@ -112,7 +123,7 @@ dice.throw('10d6')
 {'natural': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'roll': '10d6', 'modified': [5, 4, 5, 1, 3, 1, 2, 6, 4, 6], 'success': '2', 'total': '37'}
 ```
 
-### I need examples and more explanation please.
+### I need examples and more explanation please
 
 This is a base example roll
 
