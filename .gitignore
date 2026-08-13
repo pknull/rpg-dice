@@ -4,6 +4,9 @@ Memory/communicationStyle.md
 # oh pycharm...
 .idea/
 
+# Editor backup files
+*.un~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
