@@ -100,7 +100,22 @@ ENV/
 asha/
 
 # Asha runtime
-.asha/
+.asha/*
+!.asha/config.json
 Memory/sessions/
 Memory/vector_db/
 Memory/reasoning_bank/
+
+# harness-local state
+.claude/
+Work/
+Memory/events/
+Memory/sessions/
+Memory/reasoning_bank/
+# Asha Memory v2 recovery (managed)
+/Work/memory-migration/
+/Work/session-state/
+# Asha Control private context (managed)
+/.asha/control-task.json
+/.asha/result.json
+/.asha/outbox/
