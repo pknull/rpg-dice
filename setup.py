@@ -15,10 +15,7 @@ setup(
     packages=[
         'dice_roller',
     ],
-    install_requires=[
-        'sympy',
-        'pyparsing'
-    ],
+    install_requires=[],
     package_dir={'rpg-dice': 'dice_roller'},
     include_package_data=True,
     license='MIT',

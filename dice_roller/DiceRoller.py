@@ -46,7 +46,8 @@ class DiceRoller:
                     try:
                         explode = self.roll_die(1, sides, methods)
                     except RuntimeError:
-                        raise DiceException('The dice have exploded out of control ruining everything')
+                        raise DiceException('Unable to perform roll',
+                                            'The dice have exploded out of control ruining everything')
                     if methods['x']['penetrate']:
                         explode['modified'][0] -= 1
 
@@ -70,30 +71,32 @@ class DiceRoller:
 
     def dropper_keeper(self, roll_result, methods):
         rolls = roll_result['modified']
-
-        # first we keep
+        keep = drop = None
         if 'k' in methods:
-            if methods['k']['layer'] == 'low':
-                reverse = False
-            else:
-                reverse = True
-            top_rolls = sorted(rolls, reverse=reverse)[:int(methods['k']['val'])]
-            del rolls[:]
-            rolls = top_rolls
-
+            keep = (methods['k']['layer'], int(methods['k']['val']))
         if 'd' in methods:
-            if methods['d']['layer'] == 'high':
-                reverse = False
-            else:
-                reverse = True
-            keep = len(rolls) - int(methods['d']['val'])
-            if keep <= 0:
+            drop = (methods['d']['layer'], int(methods['d']['val']))
+        roll_result['modified'] = self.keep_drop(rolls, keep, drop)
+        return roll_result
+
+    @staticmethod
+    def keep_drop(rolls, keep, drop, key=None):
+        """Keep first, then drop, as (layer, count) pairs.
+
+        Sorting is stable, so tied values keep their list order; ``key`` maps
+        an entry to its value when entries carry more than the value.
+        """
+        # first we keep
+        if keep is not None:
+            layer, count = keep
+            rolls = sorted(rolls, key=key, reverse=(layer != 'low'))[:count]
+
+        if drop is not None:
+            layer, count = drop
+            size = len(rolls) - count
+            if size <= 0:
                 rolls = []
             else:
-                top_rolls = sorted(rolls, reverse=reverse)[:keep]
-                del rolls[:]
-                rolls = top_rolls
+                rolls = sorted(rolls, key=key, reverse=(layer != 'high'))[:size]
 
-        del roll_result['modified']
-        roll_result['modified'] = rolls
-        return roll_result
+        return list(rolls)

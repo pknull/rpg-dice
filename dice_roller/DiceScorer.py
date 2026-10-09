@@ -8,10 +8,11 @@ class DiceScorer:
 
     def get_roll_total(self, result, parsed_roll):
 
-        if parsed_roll['types'] != "int" or len(result) == 0:
+        if parsed_roll['types'] != "int":
             return 0
 
-        if isinstance(result[0], str):
+        # An empty pool still takes the total modifier: 0d6=+5 totals 5.
+        if not result or isinstance(result[0], str):
             core = 0
         else:
             core = sum(int(i) for i in result)
@@ -50,4 +51,37 @@ class DiceScorer:
             if 't' in parsed_roll:
                 passed = safe_compare(total, parsed_roll['t']['operator'], parsed_roll['t']['val'])
                 rep.update({'pass': '1' if passed else '0'})
+        return rep
+
+    def score_expression(self, dexp, natural, modified, total, rules, check, binding):
+        """Roll result for a whole expression (groups, sums, arithmetic).
+
+        ``natural`` and ``modified`` are (face, leaf) entries; each die is
+        counted with its own leaf's rule, after any group override.  Keys and
+        their order match get_result for a single dice term.
+        """
+        rep = {'roll': dexp,
+               'natural': [face for face, _leaf in natural],
+               'modified': [value for value, _leaf in modified],
+               'total': str(total)}
+
+        def count(entries, field):
+            hits = 0
+            for value, leaf in entries:
+                rule = rules.bound_rule(leaf, field, binding)
+                if rule is not None and safe_compare(value, *rule):
+                    hits += 1
+            return str(hits)
+
+        if rules.defined['success']:
+            rep['success'] = count(modified, 'success')
+        if rules.defined['fail']:
+            rep['fail'] = count(modified, 'fail')
+        if rules.defined['nf']:
+            rep['nf'] = count(natural, 'nf')
+        if rules.defined['ns']:
+            rep['ns'] = count(natural, 'ns')
+        if check is not None:
+            passed = safe_compare(total, check[0], check[1])
+            rep['pass'] = '1' if passed else '0'
         return rep

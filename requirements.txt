@@ -1,2 +1,1 @@
-sympy
-pyparsing
+# No runtime dependencies. Test dependencies: requirements-test.txt

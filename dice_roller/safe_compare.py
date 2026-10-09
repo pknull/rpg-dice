@@ -96,12 +96,12 @@ def safe_arithmetic(left, op_str, right):
 
 def safe_eval_arithmetic(expression):
     """
-    Safely evaluate a simple arithmetic expression containing only numbers and operators.
+    Evaluate a simple arithmetic expression containing only numbers and operators.
 
-    This replaces sympy.sympify() for evaluating expressions like "7 + 15 + 5"
-    after dice have been rolled and replaced with their totals.
-
-    Only supports: integers, floats, +, -, *, /, parentheses, whitespace
+    Supports integers, decimals, +, -, *, /, unary minus, parentheses and
+    whitespace, with the usual precedence and Python's true division.  It is
+    a small recursive-descent evaluator: nothing is passed to eval(), and
+    anything else, including ``**``, raises.
 
     Args:
         expression: String containing arithmetic expression
@@ -110,21 +110,73 @@ def safe_eval_arithmetic(expression):
         Numeric result
 
     Raises:
-        ValueError: If expression contains invalid characters
+        ValueError: If the expression is not plain arithmetic
     """
+    tokens = _tokenize_arithmetic(expression)
+    position = [0]
+
+    def peek():
+        return tokens[position[0]] if position[0] < len(tokens) else None
+
+    def take():
+        token = peek()
+        position[0] += 1
+        return token
+
+    def expr(depth):
+        value = term(depth)
+        while peek() in ('+', '-'):
+            value = value + term(depth) if take() == '+' else value - term(depth)
+        return value
+
+    def term(depth):
+        value = factor(depth)
+        while peek() in ('*', '/'):
+            if take() == '*':
+                value = value * factor(depth)
+            else:
+                divisor = factor(depth)
+                if divisor == 0:
+                    raise ValueError(f"Invalid arithmetic expression: {expression!r}")
+                value = value / divisor
+        return value
+
+    def factor(depth):
+        if depth > 64:
+            raise ValueError(f"Invalid arithmetic expression: {expression!r}")
+        token = take()
+        if token == '-':
+            return -factor(depth + 1)
+        if token == '(':
+            value = expr(depth + 1)
+            if take() != ')':
+                raise ValueError(f"Invalid arithmetic expression: {expression!r}")
+            return value
+        if isinstance(token, (int, float)):
+            return token
+        raise ValueError(f"Invalid arithmetic expression: {expression!r}")
+
+    result = expr(0)
+    if position[0] != len(tokens):
+        raise ValueError(f"Invalid arithmetic expression: {expression!r}")
+    return result
+
+
+def _tokenize_arithmetic(expression):
     import re
 
-    # Only allow: digits, decimal points, operators, parentheses, whitespace
-    if not re.match(r'^[\d\s\+\-\*\/\.\(\)]+$', expression):
-        raise ValueError(f"Expression contains invalid characters: {expression!r}")
-
-    # Use Python's eval with a restricted namespace (no builtins, no names)
-    # This is safe because we've validated the characters above
-    try:
-        result = eval(expression, {"__builtins__": {}}, {})
-        return result
-    except (SyntaxError, TypeError, ZeroDivisionError) as e:
-        raise ValueError(f"Invalid arithmetic expression: {expression!r}") from e
+    tokens = []
+    for number, symbol, other in re.findall(r'(\d+(?:\.\d+)?)|([-+*/()])|(\S)', expression):
+        if other:
+            raise ValueError(f"Expression contains invalid characters: {expression!r}")
+        if number:
+            tokens.append(float(number) if '.' in number else int(number))
+        else:
+            tokens.append(symbol)
+    for left, right in zip(tokens, tokens[1:]):
+        if left == '*' and right == '*':
+            raise ValueError(f"Invalid arithmetic expression: {expression!r}")
+    return tokens
 
 
 def _to_number(value):

@@ -216,15 +216,17 @@ class TestCustomFaces:
 
 
 class TestErrorHandling:
-    """Error handling for unsupported features."""
+    """Exploding and reroll are exact now; string faces still have no numeric stats."""
 
-    def test_exploding_raises_error(self, prob):
-        with pytest.raises(ValueError, match="Exploding"):
-            prob.analyze('5d6x=6')
+    def test_exploding_is_exact_with_reported_residual(self, prob):
+        result = prob.analyze('5d6x=6')
+        assert 0 < result['unresolved'] < Fraction(1, 10 ** 6)
+        assert sum(result['distribution'].values()) + result['unresolved'] == 1
 
-    def test_reroll_raises_error(self, prob):
-        with pytest.raises(ValueError, match="Exploding"):
-            prob.analyze('5d6r<3')
+    def test_reroll_is_exact(self, prob):
+        result = prob.analyze('5d6r<3')
+        assert result['unresolved'] == 0
+        assert result['min'] == 15 and result['max'] == 30
 
     def test_string_faces_raises_error(self, prob):
         with pytest.raises(ValueError, match="numeric"):
