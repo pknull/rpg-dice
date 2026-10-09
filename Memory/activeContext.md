@@ -17,8 +17,10 @@ reported as unresolved, keep/drop DP, subroll mixtures, opt-in bounded faces).
 Fixed e179458 defects: reroll-every-face hang, certain-explosion crash, eval of
 ** in throw_string, total modifier lost on empty pools. Suite 739 passed;
 10d6kh3 1.1 ms, 10d10kh3 2.2 ms. No runtime dependencies; icepool test-only.
-No git tag for 0.5.0 (tags stop at v0.3). Evidence:
-Work/reports/exact-engine.md (local, gitignored).
+Released as tag v0.5.0 (on 7a06b3b) and GitHub release v0.5.0; dependents
+pin git+https://github.com/pknull/rpg-dice.git@v0.5.0. The older v0.2 and v0.3
+tags exist only in the local clone. Evidence: Work/reports/exact-engine.md
+(local, gitignored).
 
 # Next
 
