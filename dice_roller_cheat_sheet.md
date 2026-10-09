@@ -10,7 +10,8 @@ y = dice size
 c = constant OR dice expression (subroll)
 ```
 
-**Subrolls:** Anywhere you see `c`, you can use a dice expression like `1d4` instead of a number.
+**Subrolls:** Anywhere you see `c`, you can use a dice expression like `1d4` instead of a number, except the
+per-die modifier, which takes a number only (`1d8+1d6` is a sum of two dice).
 
 ## Basic Roll
 
@@ -22,8 +23,17 @@ ndy
 ## Boost Dice Roll Values (Per-Die)
 
 ```
-ndy+c
+ndy+m          (m: a constant, directly after the sides; spaces optional)
 10d6+4
+```
+
+## Add Pools and Groups
+
+```
+ndy+ndy        sum of two pools: 1d8+1d6
+(…)+(…)        groups add totals and counts: (1d10>=6)+(1d8>=6)
+(…)=+c t>=c    tokens after ) apply to the group: (2d20kh1)=+5t>=15
+(…)*m  (…)/m   scale a group's total by a constant
 ```
 
 ## Boost Dice Roll Total
@@ -43,7 +53,7 @@ ndy=+c=-c      (chainable)
 ```
 ndyx[>,<,>=,<=,==]c
 10d6x>=5
-10d6x>=1d3     (subroll threshold)
+10d6x=1d6      (subroll threshold)
 ```
 
 ## Count Successes
@@ -127,7 +137,7 @@ Similar to the exploding dice
 ```
 ndyxx[>,<,>=,<=,==]c
 10d6xx>=5
-10d6xx>=1d3    (subroll threshold)
+10d6xx=1d6     (subroll threshold)
 ```
 
 ## Penetrating Dice
@@ -164,5 +174,6 @@ Method Modifiers (x, kh, r, f, etc.) ──────────────�
 Total Check ─────────────────────────────────────────────────┘
 ```
 
-Any `N` value in modifiers can be a dice expression (subroll) like `1d4`.
+Any `N` value in modifiers can be a dice expression (subroll) like `1d4`. Anything out of this order
+raises `DiceException` (`throw()` returns `Bad roll expression - ...`).
 

@@ -6,11 +6,14 @@ A simple RPG dice roller
 
 ## Quick start
 
-1. Install the dependencies:
+1. Install the package (it has no runtime dependencies):
 
    ```bash
-   pip install -r requirements.txt
+   pip install -e .
    ```
+
+   To run the tests: `pip install -r requirements-test.txt && python -m pytest`.
+   icepool appears there only to cross-check the exact engine; rpg-dice never imports it.
 
 2. Use the `DiceThrower` class to roll dice:
 
@@ -29,7 +32,7 @@ A simple RPG dice roller
 | `DiceParser` | Parses dice notation strings into executable components |
 | `DiceRoller` | Handles the actual dice rolling logic |
 | `DiceScorer` | Calculates successes, failures, and totals |
-| `DiceProbability` | Statistical analysis and probability calculations |
+| `DiceProbability` | Exact probabilities (`exact`, `analyze`) and sampling (`monte_carlo`) |
 | `Die` | Represents a single die with customizable sides |
 | `DiceException` | Custom exception for dice-related errors |
 
@@ -78,7 +81,9 @@ Result: `{success: '4', total: '64', ...}`
 
 ### Subrolls (Dice as Values)
 
-Anywhere you see `N` (a number), you can use a dice expression instead. The dice is rolled first and its result replaces the value.
+Anywhere you see `N` (a number) in the table below, you can use a dice expression `NdS` instead. The dice is
+rolled once per throw and its result replaces the value; exact analysis treats it as a random variable.
+The per-die modifier takes only a number: `1d8+1d6` is a sum of two dice (see Pools, groups and arithmetic).
 
 | Position | Static | With Subroll |
 |----------|--------|--------------|
@@ -86,7 +91,7 @@ Anywhere you see `N` (a number), you can use a dice expression instead. The dice
 | Total Modifier Chain | `=+10=-3` | `=+1d6=-1d4` |
 | Success Threshold | `>=5` | `>=1d6` |
 | Method Value | `kh3` | `kh1d4` |
-| Explode Threshold | `x>=5` | `x>=1d3` |
+| Explode Threshold | `x>=5` | `x=1d6` |
 | Reroll Threshold | `r<=2` | `r<=1d2` |
 
 **Example:** `1d20=+1d4t>=15`
@@ -101,6 +106,61 @@ Anywhere you see `N` (a number), you can use a dice expression instead. The dice
 - Roll 3d6: [4, 3, 5] = 12
 - Roll 1d4: 3, Roll 1d2: 1
 - Total: 12 + 3 - 1 = 14
+
+### Pools, groups and arithmetic
+
+`+` and `-` between dice terms add or subtract their totals: `1d8+1d6` is one d8 plus one d6, exactly as
+`(1d8)+(1d6)`. Each term keeps its own tokens. A `+N` directly after the sides is still the per-die modifier
+(`2d6+3` adds 3 to each die; spaces change nothing, so `2d6 + 3` is the same); a `+N` after any other token
+adds N to the total (`2d20kh1+5`), and `=+N` always does.
+
+Parentheses make a group. Groups combine with `+`; across them `natural` and `modified` concatenate, while
+`total`, `success`, `fail`, `ns` and `nf` add:
+
+```
+dice.throw('(1d10>=6)+(1d8>=6)')     # one success count over a d10 and a d8
+dice.throw('(2d20kh1)=+5t>=15')      # advantage, +5, against DC 15
+```
+
+Tokens after a closing parenthesis apply to the group's combined result: total modifiers (`=+N`), a success
+comparator, `s`/`f`/`ns`/`nf` (these replace the members' own rules for the whole group), keep/drop and the total
+check. Group tokens need explicit values. Keep/drop on a group needs members that are plain sums of dice terms;
+tied values are kept in left-to-right order. `*` and `/` take a constant (`(1d8+1d6)*2`, `(1d6)/2`); division
+gives an exact fraction.
+
+A total check (`t`, or a comparator after the methods) tests the total of the whole expression, so it may only
+follow the last token of a single term or group: `1d20+1d4t>=10` is rejected, `(1d20+1d4)t>=10` works.
+
+### Strict parsing
+
+Every character must be placed. A misplaced or unknown token, a repeated method (`kh1kh2`), a total modifier
+after the methods, a reroll that matches every face, an explosion every face triggers, a keep/drop count
+below zero (a bare `k` on dice like `{-2,-1}`), more than 200 dice in
+one expression (subrolls included), more than 100 sides, more than 200 terms or groups nested deeper than 32
+raise `DiceException`; `throw()` returns `'Bad roll expression - ...'`. The token order is the one shown at the
+top: dice, per-die modifier, total modifiers, success comparator, methods, total check. Comparison
+values are unsigned numbers (`f<0` counts the -1 face of a Fate die); `=` and `==` both mean equal.
+
+### Exact probabilities
+
+```python
+from dice_roller.DiceProbability import DiceProbability
+result = DiceProbability().exact('2d20=+5kh1t>=15ns20nf1')
+result.fields                  # ('total', 'success', 'fail', 'ns', 'nf', 'pass')
+result.joint                   # {(total, success, fail, ns, nf, pass): Fraction, ...}
+result.marginal('pass')[1]     # Fraction(319, 400)
+result.records()               # [{'total': 6, ..., 'probability': Fraction(1, 400)}, ...]
+```
+
+`exact()` returns the joint distribution of every roll-result field with `Fraction` probabilities, computed
+without rolling. A field the expression does not define is `None` (`fail` without `f`, `pass` without a total
+check). Explosions are followed to `explode_depth` extra dice per die (default 10); the probability of deeper
+chains is reported as `result.unresolved`, never folded into an outcome. `faces=True` adds `result.faces`, the
+distribution of (sorted kept `modified`, sorted `natural`, outcome), for pools within `faces_limit` multisets
+(default 250,000: about 28d6, 11d10 or 6d20 without rerolls); beyond it a `DiceException` names the limit.
+`analyze()` summarises the same result (`distribution`, `mean`, `std`, percentiles, `success_distribution`,
+`pass_probability`, `joint`, `unresolved`). 10d10kh3 takes a few milliseconds; `tools/bench_exact.py` times
+any expression in a fresh interpreter.
 
 ### Quick Reference: Success vs Pass
 
@@ -157,7 +217,8 @@ The second segment is the number of sides, with the token of dN
 d6
 ```
 
-This would constitute a 6 sided dice. You can also replace the number with a list in curly brackets dice. Note any additional modifiers are ignored if the list contains any strings.
+This would constitute a 6 sided dice. You can also replace the number with a list in curly brackets dice. A list
+containing any text face takes no modifiers: the roll is rejected rather than the modifiers ignored.
 
 ```
 10d{a,b,c}
@@ -250,9 +311,12 @@ This would explode any dice equal or greater than 5 in our roll.
 With subroll threshold:
 
 ```
-dice.throw('10d6x>=1d3')
-# 1d3 rolls 2, so explode on >= 2
+dice.throw('10d6x=1d6')
+# 1d6 rolls 4, so explode on 4
 ```
+
+A subroll that can make every face explode (`x>=1d3` when it rolls 1) or match every reroll
+(`r<=1d6` when it rolls 6) is rejected for that throw, and `exact()` rejects the expression.
 
 #### Compounding Dice xxN
 
@@ -447,7 +511,7 @@ dice.throw('5d10+2>=10t>=40')
 ### Conclusion
 
 Once you get the main dice roll down ```2d5``` you can add on the tokens above for some very
-expressive (and meaningless) dice rolls.
+expressive (and meaningless) dice rolls. The trailing `+4` below is a term of its own and adds 4 to the total.
 
 ```
 dice.throw('10d6+0>=5f<=2xxp>=5ro=1dl5+4')
