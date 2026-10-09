@@ -1,22 +1,31 @@
 # Objective
 
-rpg-dice is a Python package for RPG dice rolling: D&D-style notation
-(2d6+3, 10d10>=5), exploding/compounding/penetrating dice, rerolls, success
-counting and pool manipulation. Used as a dependency by the pk.shado Discord
-bot.
+rpg-dice is a Python package for RPG dice: DiceThrower rolls rpg-dice notation
+(2d6+3, 10d10>=8x>=10, groups such as (1d10>=6)+(1d8>=6)) and
+DiceProbability.exact returns the exact joint distribution of a roll's fields
+for rpg-skills. pk.asha calls only DiceThrower().throw(). Requirements:
+rpg-skills/docs/rpg-dice-requirements.md (approved 2026-10-09).
 
 # State
 
-Verified 2026-09-16. master at e00fcdd (2026-08-13, ignore editor backups)
-plus today's hygiene commit; public repo pknull/rpg-dice. v0.4 security
-hardening is in the tree: sympy.sympify on user input replaced by the
-whitelist-based dice_roller/safe_compare.py. Suite green today. Memory
-reduced to the v2 pair; v1 files, reasoning_bank DB, event logs, dead hook
-backups and the spent AUDIT-REVIEW were retired.
+Verified 2026-10-09. Version 0.5.0 on master, pushed to origin after Keeper
+approval: afc4c0b exact engine, strict parser, groups and pool sums; 1ad1efe
+docs; c426cf4 version 0.5.0; then this Memory commit. Implements D1-D4 and
+S1-S4: dice_roller/notation.py (strict tree parser), dice_roller/exact.py
+(Fraction joint over total/success/fail/ns/nf/pass, explosion residual
+reported as unresolved, keep/drop DP, subroll mixtures, opt-in bounded faces).
+Fixed e179458 defects: reroll-every-face hang, certain-explosion crash, eval of
+** in throw_string, total modifier lost on empty pools. Suite 739 passed;
+10d6kh3 1.1 ms, 10d10kh3 2.2 ms. No runtime dependencies; icepool test-only.
+No git tag for 0.5.0 (tags stop at v0.3). Evidence:
+Work/reports/exact-engine.md (local, gitignored).
 
 # Next
 
-- None scheduled.
+- rpg-skills dice_odds.py must catch DiceException from parse_input (D3 now
+  raises); outside this repo.
+- pk.asha still pins 1b2f163. Moving the pin brings pool sums; wrapping each
+  dice term in parentheses there gives conventional 2d6+3 = 10.
 
 # Blockers
 
